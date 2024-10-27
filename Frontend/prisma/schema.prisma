@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://HarshalRawal:pEj5Q7fbHuAe@ep-delicate-morning-a5swcnzk.us-east-2.aws.neon.tech/Paytm?sslmode=require"
+
+  // dokcer command : docker run -d \
+  // --name postgres-container \
+  // -e POSTGRES_DB=Paytm \
+  // -e POSTGRES_USER=HarshalRawal \
+  // -e POSTGRES_PASSWORD=secretpassword \
+  // -p 5432:5432 \
+  // postgres:latest \
+  // -c sslmode=require 
+  
+  // if volume is needed 
+  // docker run -d \
+  // --name postgres-container \
+  // -e POSTGRES_DB=Paytm \
+  // -e POSTGRES_USER=HarshalRawal \
+  // -e POSTGRES_PASSWORD=secretpassword \
+  // -p 5432:5432 \
+  // -v postgres-data:/var/lib/postgresql/data \
+  // postgres:latest
+}
+
+enum TransactionType {
+  credit
+  debit
+}
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  password      String
+  phone         String
+  wallet        Wallet?
+  transactions  Transaction[]  // One-to-many relationship with Transaction
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("users")  // Map to `users` table in the database
+}
+
+model Wallet {
+  id            String         @id @default(uuid())
+  balance       Int
+  userId        String         @unique  // One-to-one relationship with User, unique constraint
+  user          User           @relation(fields: [userId], references: [id])
+  transactions  Transaction[]  // One-to-many relationship with Transaction
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId])  // Add index on `userId` field for faster lookups
+  @@map("wallets")   // Map to `wallets` table in the database
+}
+
+model Transaction {
+  id               String             @id @default(uuid())
+  transactionType  TransactionType    // Enum for transaction type (credit or debit)
+  status           TransactionStatus  // Enum for transaction status
+  amount           Int
+  walletId         String
+  wallet           Wallet             @relation(fields: [walletId], references: [id])
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  outboxes         Outbox[] 
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+
+  @@index([walletId])  // Add index on `walletId` for faster lookups
+  @@index([userId])    // Add index on `userId` for faster lookups
+  @@map("transactions")  // Map to `transactions` table in the database
+}
+
+model Outbox {
+  id             String      @id @default(cuid())
+  transactionId  String
+  eventType      String
+  payload        Json
+  published      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  transaction    Transaction @relation(fields: [transactionId], references: [id])
+}
+
+enum TransactionStatus {
+  processing
+  success
+  failed
+}
+
