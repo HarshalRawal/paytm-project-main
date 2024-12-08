@@ -1,7 +1,7 @@
 import { sendTokenToGateway } from "./sendToken";
 import axios from "axios";
 import { StoreNewPaymentRequest } from "./newPayment";
-import { PaymentStatus, PaymentType } from "@prisma/client";
+import { PaymentType, PaymentStatus } from "@prisma/client";
 interface newPaymentRequest {
     bankReferenceId: string;
     PaymentType: PaymentType;

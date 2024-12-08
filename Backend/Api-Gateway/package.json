@@ -14,6 +14,8 @@
   "license": "ISC",
   "dependencies": {
     "@types/http-proxy": "^1.17.15",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
     "express": "^4.21.0",
     "http-proxy-middleware": "^3.0.2",
     "nodemon": "^3.1.7",
@@ -21,6 +23,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/http-proxy-middleware": "^1.0.0",
     "@types/redis": "^4.0.11",

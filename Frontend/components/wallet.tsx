@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import { Wallet, CreditCard, DollarSign, ArrowUpRight, ArrowDownRight, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-
+import { useBalance } from '@/store/useBalance'
 export default function WalletComponent() {
-  const [balance, setBalance] = useState(1000)
+  const {balance,loading,error,fetchBalance} = useBalance();
   const [transactions, setTransactions] = useState([
     { id: 1, type: 'credit', amount: 500, date: '2023-05-15' },
     { id: 2, type: 'debit', amount: 200, date: '2023-05-14' },
@@ -28,6 +28,15 @@ export default function WalletComponent() {
     localStorage.setItem('darkMode', isDarkMode.toString())
   }, [isDarkMode])
 
+  useEffect(() => {
+    const fetchUserBalance = async () => {
+      const userId = "3291280e-5400-490d-8865-49f6591c249c";
+      await fetchBalance(userId);
+    };
+
+    fetchUserBalance();
+  }, [fetchBalance]);
+   // Add `fetchBalance` to the dependency array
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
   }
@@ -109,12 +118,25 @@ export default function WalletComponent() {
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Balance</h2>
                 <Wallet className="text-blue-500 dark:text-blue-400" size={24} />
               </div>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${balance.toFixed(2)}</p>
-              {showExchangeRate && (
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  ≈ €{(balance * exchangeRate).toFixed(2)}
-                </p>
-              )}
+              <div className="balance-display">
+                {loading ? (
+                  <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">Loading...</p>
+                ) : error ? (
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{error}</p>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      ${balance ? balance : "N/A"}
+                    </p>
+                    {showExchangeRate && (
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        ≈ €{balance ? (balance * exchangeRate) : "N/A"}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
               <button
                 onClick={toggleExchangeRate}
                 className="mt-2 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
