@@ -3,10 +3,13 @@ import { createServer } from 'http';
 import WebSocket from 'ws';
 import { idempotencyMiddleware } from './middleware/idempotencyMiddleware';
 import { topUpProxy } from './routes/route';
+import cors from 'cors';
+import { getBalance } from './utils/getBalance';
 
 const app = express();
 app.use(express.json());
 app.use("/api-gateway/top-up", idempotencyMiddleware, topUpProxy);
+app.use(cors());
 
 // Create an HTTP server to host both the REST API and WebSocket server
 const server = createServer(app)
@@ -82,7 +85,16 @@ app.post('/api-gateway/bank-token', (req, res) => {
     }
     res.status(200).json({ message: 'Token received and sent to client' });
 });
-
+ app.post('/api-gateway/getBalance',async (req,res)=>{
+try {
+        const userId = req.body.userId;
+        console.log(`Getting balance for userId: ${userId}`);
+        const balance = await getBalance(userId);
+        res.status(200).json(balance);
+} catch (error) {
+    console.error('Error getting balance:', error);
+}
+    });
 app.post('/wallet-service',async (req,res)=>{
     const amount = req.body.amount;
     const walletId = req.body.walletId;

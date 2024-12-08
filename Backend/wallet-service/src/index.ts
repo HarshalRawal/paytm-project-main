@@ -4,7 +4,7 @@ import { connectKafka, disconnectKafka, consumeFromKafka } from "./consumer/cons
 import { connectDb, disconnectDb } from "./db/prisma";
 import { prisma } from "./db/prisma";
 import { PrismaClient } from "@prisma/client";
-
+import { walletBalance } from "./utils/walletBalance";
 const app = express();
 
 // Add CORS middleware
@@ -45,8 +45,17 @@ app.post("/create-wallet", async (req, res) => {
         res.status(400).send(error);
     }
 })
-// Example route for top-up (add more routes as needed)
-// app.post("/topup", handleTopUp);
+
+app.post('/getBalance', async (req, res) => {
+try {
+        const userId = req.body.userId;
+        console.log(`Getting balance for userId: ${userId}`);
+        const balance = await walletBalance(userId);
+        res.status(200).json(balance);
+} catch (error) {
+    console.error('Error getting balance:', error);
+}
+})
 
 const PORT = process.env.PORT || 8086;
 
