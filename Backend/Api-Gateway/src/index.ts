@@ -83,8 +83,8 @@ app.post('/api-gateway/bank-token', (req, res) => {
     }
     const clientSocket = activeClients.get(userId);
     if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
-        const redirectUrl = `http://localhost:4008/Demo-bank/net-banking/${token}`;
-        clientSocket.send(JSON.stringify({event:"Bank-Token",PaymentId, redirectUrl, token }));
+        const redirectUrl = `http://localhost:1000/Demo-bank/net-banking/${token}`;
+        clientSocket.send(JSON.stringify({event:"Bank-Token",data:{PaymentId, redirectUrl,token} }));
         console.log(`Sent bank token for Payment ID: ${PaymentId} to client`);
     } else {
         console.error(`WebSocket connection for userId ${userId} is not open.`);

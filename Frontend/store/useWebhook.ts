@@ -19,7 +19,21 @@ const useWebSocket = (userId: string) => {
               setBalance(message.data.currentBalance);
             }
             break;
-            case 'redirect-url':
+              case 'Bank-Token':
+                if (message.data?.redirectUrl) {
+                  // Show the loading spinner
+                  const spinner = document.getElementById('loading-spinner');
+                  if (spinner) spinner.classList.remove('hidden');
+              
+                  // Redirect after a short delay
+                  setTimeout(() => {
+                    window.location.href = message.data.redirectUrl;
+              
+                    // Optionally, hide the spinner after redirecting (not strictly necessary)
+                    if (spinner) spinner.classList.add('hidden');
+                  }, 500); // Matches CSS animation time
+                }
+                break;
               
           default:
             console.log('Unknown event:', message.event);  

@@ -1,9 +1,10 @@
 "use client"
-
+import { useEffect,useState } from "react"
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { bankLogin } from "@/utils/bankLogin"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -41,10 +42,22 @@ export default function NetBankingPage() {
       password: "",
     },
   })
-
+  const [token, setToken] = useState<string | null>('');
+  useEffect(()=>{
+    const currentUrl = window.location.href;
+    const token = currentUrl.split('/').pop();
+    if(token){
+      setToken(token);
+    }
+  },[])
   function onSubmit(values: z.infer<typeof formSchema>) {
     // This is where you would typically handle the login process
     console.log(values)
+    const username = values.username;
+    const password = values.password;
+    if(token){
+      bankLogin({username,password,token});
+    }
   }
 
   return (
