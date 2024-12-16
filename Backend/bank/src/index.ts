@@ -4,13 +4,13 @@ import axios from "axios";
 import * as crypto from "crypto";
 import { generateTransactionId } from "./bankFuncitons";
 import { isSuccess } from "./bankFuncitons";
-
+import cors from "cors";
 const app = express();
 app.use(express.json())
 
 // Secret key for HMAC signing
 const HMAC_SECRET = 'mysecretkey';
-
+app.use(cors());
 // Function to create HMAC SHA256 signature
 function createSignature(payload:string) {
     return crypto.createHmac('sha256', HMAC_SECRET).update(payload).digest('hex');
