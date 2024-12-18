@@ -6,13 +6,25 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
 import useWebSocket from '@/store/useWebhook'
 import { TopUpRequest } from '@/lib/topUpRequest'
+import { RecentTransactions } from '@/components/RecentTransactions'
+import { Transaction } from '@/components/RecentTransactions'
 export default function WalletComponent() {
   const {balance,loading,error,fetchBalance} = useBalance();
-  const [transactions, setTransactions] = useState([
-    { id: 1, type: 'credit', amount: 500, date: '2023-05-15' },
-    { id: 2, type: 'debit', amount: 200, date: '2023-05-14' },
-    { id: 3, type: 'credit', amount: 1000, date: '2023-05-13' },
-  ])
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    { id: 1, type: 'top-up', amount: 500, date: '2023-05-15', status: 'successful' },
+    { id: 2, type: 'withdrawal', amount: 200, date: '2023-05-14', status: 'successful' },
+    { id: 3, type: 'p2p', amount: 1000, date: '2023-05-13', status: 'failed' },
+    { id: 4, type: 'top-up', amount: 1500, date: '2023-05-12', status: 'successful' },
+    { id: 5, type: 'withdrawal', amount: 300, date: '2023-05-11', status: 'failed' },
+    { id: 6, type: 'p2p', amount: 700, date: '2023-05-10', status: 'successful' },
+    { id: 7, type: 'top-up', amount: 2000, date: '2023-05-09', status: 'successful' },
+    { id: 8, type: 'withdrawal', amount: 100, date: '2023-05-08', status: 'failed' },
+    { id: 9, type: 'p2p', amount: 400, date: '2023-05-07', status: 'successful' },
+    { id: 10, type: 'top-up', amount: 800, date: '2023-05-06', status: 'successful' },
+    { id: 11, type: 'withdrawal', amount: 250, date: '2023-05-05', status: 'successful' },
+    { id: 12, type: 'p2p', amount: 1200, date: '2023-05-04', status: 'failed' },
+    { id: 13, type: 'top-up', amount: 1000, date: '2023-05-03', status: 'successful' },
+  ]);
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showTopUpModal, setShowTopUpModal] = useState(false)
@@ -168,43 +180,12 @@ export default function WalletComponent() {
             </motion.div>
           </div>
 
-          <motion.div 
-            className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-700"
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-200">Recent Transactions</h2>
-            <div className="space-y-4">
-              {transactions.map((transaction, index) => (
-                <motion.div
-                  key={transaction.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 p-4 transition-all duration-300 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-gray-500"
-                >
-                  <div className="flex items-center space-x-4">
-                    {transaction.type === 'credit' ? (
-                      <ArrowUpRight className="text-green-500 dark:text-green-400" size={24} />
-                    ) : (
-                      <ArrowDownRight className="text-red-500 dark:text-red-400" size={24} />
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-800 dark:text-gray-200">
-                        {transaction.type === 'credit' ? 'Received' : 'Sent'}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{transaction.date}</p>
-                    </div>
-                  </div>
-                  <p className={`font-semibold ${
-                    transaction.type === 'credit' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                  }`}>
-                    {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
+            <RecentTransactions transactions={transactions} />
           </motion.div>
 
           <div className="mt-8 text-center">
@@ -260,3 +241,4 @@ export default function WalletComponent() {
     </div>
   )
 }
+
