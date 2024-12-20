@@ -19,6 +19,8 @@ model Transaction {
   amount           Decimal
   status           TransactionStatus
   transactionType  TransactionType
+  from             String?
+  to               String?
   walletId         String
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt

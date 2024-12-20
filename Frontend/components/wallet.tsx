@@ -1,38 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Wallet, CreditCard, DollarSign, ArrowUpRight, ArrowDownRight, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
+import axios from 'axios'
 import useWebSocket from '@/store/useWebhook'
 import { TopUpRequest } from '@/lib/topUpRequest'
 import { RecentTransactions } from '@/components/RecentTransactions'
-import { Transaction } from '@/components/RecentTransactions'
+import { Transaction, usePaginationStore } from '@/store/usePaginationState'
+
 export default function WalletComponent() {
-  const {balance,loading,error,fetchBalance} = useBalance();
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: 1, type: 'top-up', amount: 500, date: '2023-05-15', status: 'successful' },
-    { id: 2, type: 'withdrawal', amount: 200, date: '2023-05-14', status: 'successful' },
-    { id: 3, type: 'p2p', amount: 1000, date: '2023-05-13', status: 'failed' },
-    { id: 4, type: 'top-up', amount: 1500, date: '2023-05-12', status: 'successful' },
-    { id: 5, type: 'withdrawal', amount: 300, date: '2023-05-11', status: 'failed' },
-    { id: 6, type: 'p2p', amount: 700, date: '2023-05-10', status: 'successful' },
-    { id: 7, type: 'top-up', amount: 2000, date: '2023-05-09', status: 'successful' },
-    { id: 8, type: 'withdrawal', amount: 100, date: '2023-05-08', status: 'failed' },
-    { id: 9, type: 'p2p', amount: 400, date: '2023-05-07', status: 'successful' },
-    { id: 10, type: 'top-up', amount: 800, date: '2023-05-06', status: 'successful' },
-    { id: 11, type: 'withdrawal', amount: 250, date: '2023-05-05', status: 'successful' },
-    { id: 12, type: 'p2p', amount: 1200, date: '2023-05-04', status: 'failed' },
-    { id: 13, type: 'top-up', amount: 1000, date: '2023-05-03', status: 'successful' },
-  ]);
+  const { balance, loading: balanceLoading, error: balanceError, fetchBalance } = useBalance();
+  const {
+    transactions,
+    cursor,
+    loading: transactionsLoading,
+    hasNextPage,
+    setTransactions,
+    setLoading,
+    setCursor,
+    setHasNextPage,
+  } = usePaginationStore();
+
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showTopUpModal, setShowTopUpModal] = useState(false)
   const [topUpAmount, setTopUpAmount] = useState('')
- // const [exchangeRate, setExchangeRate] = useState(1.2) // USD to EUR rate
   const [showExchangeRate, setShowExchangeRate] = useState(false)
 
   const userId = "3291280e-5400-490d-8865-49f6591c249c";
+  const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
   useWebSocket(userId);
 
   useEffect(() => {
@@ -47,13 +45,47 @@ export default function WalletComponent() {
 
   useEffect(() => {
     const fetchUserBalance = async () => {
-      const userId = "3291280e-5400-490d-8865-49f6591c249c";
       await fetchBalance(userId);
     };
 
     fetchUserBalance();
-  }, [fetchBalance]);
-   // Add `fetchBalance` to the dependency array
+  }, [fetchBalance, userId]);
+
+  const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:8080/transactions', {
+        params: {
+          walletId,
+          cursor: newCursor,
+          limit: 10,
+        },
+      });
+      const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+      const { transactions: newTransactions, nextCursor } = data;
+      console.log("Fetched transactions:", newTransactions);
+      setTransactions((prevTransactions: Transaction[]) => 
+        newCursor ? [...prevTransactions, ...newTransactions] : newTransactions
+      );
+      setCursor(nextCursor);
+      setHasNextPage(!!nextCursor);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [walletId, setTransactions, setCursor, setHasNextPage, setLoading]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const handleLoadMore = () => {
+    if (hasNextPage && !transactionsLoading) {
+      fetchTransactions(cursor);
+    }
+  };
+
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
   }
@@ -70,20 +102,16 @@ export default function WalletComponent() {
   const submitTopUp = async() => {
     const amount = parseFloat(topUpAmount)
     if (!isNaN(amount) && amount > 0) {
-      const userId = '3291280e-5400-490d-8865-49f6591c249c';
-      const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
-      TopUpRequest({userId,walletId,amount});
+      TopUpRequest({userId, walletId, amount});
       closeTopUpModal()
     }
   }
 
   const refreshBalance = () => {
     setIsRefreshing(true)
-    setTimeout(() => {
+    fetchBalance(userId).finally(() => {
       setIsRefreshing(false)
-      // Simulating balance update
-    //  setBalance(prevBalance => prevBalance + Math.random() * 100)
-    }, 1500)
+    })
   }
 
   const toggleExchangeRate = () => {
@@ -134,10 +162,10 @@ export default function WalletComponent() {
                 <Wallet className="text-blue-500 dark:text-blue-400" size={24} />
               </div>
               <div className="balance-display">
-                {loading ? (
+                {balanceLoading ? (
                   <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">Loading...</p>
-                ) : error ? (
-                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{error}</p>
+                ) : balanceError ? (
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{balanceError}</p>
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
@@ -145,7 +173,7 @@ export default function WalletComponent() {
                     </p>
                     {showExchangeRate && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        {/* ≈ €{balance ? (balance * exchangeRate) : "N/A"} */}
+                        {/* Exchange rate logic here */}
                       </p>
                     )}
                   </>
@@ -185,7 +213,12 @@ export default function WalletComponent() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <RecentTransactions transactions={transactions} />
+            <RecentTransactions 
+              transactions={transactions}
+              loading={transactionsLoading}
+              hasNextPage={hasNextPage}
+              onLoadMore={handleLoadMore}
+            />
           </motion.div>
 
           <div className="mt-8 text-center">
