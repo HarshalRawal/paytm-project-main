@@ -5,6 +5,7 @@ import { connectDb, disconnectDb } from "./db/prisma";
 import { prisma } from "./db/prisma";
 import { PrismaClient } from "@prisma/client";
 import { walletBalance } from "./utils/walletBalance";
+import { getTransactions } from "./utils/AllTransactions";
 const app = express();
 
 // Add CORS middleware
@@ -56,6 +57,18 @@ try {
     console.error('Error getting balance:', error);
 }
 })
+app.get("/transactions", async (req, res) => {
+    console.log('Received request for transactions');
+    console.log('Query parameters:', req.query);
+    const { walletId, cursor, limit = 10 } = req.query;
+    try {
+      const data = await getTransactions(walletId as string, cursor as string | null, Number(limit));
+      res.status(200).json(data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+});
 
 const PORT = process.env.PORT || 8086;
 

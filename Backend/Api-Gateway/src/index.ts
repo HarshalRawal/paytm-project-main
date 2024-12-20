@@ -6,15 +6,20 @@ import { topUpProxy } from './routes/route';
 import cors from 'cors';
 import { getBalance } from './utils/getBalance';
 import * as url from 'url';
+import axios from 'axios';
+import { handleTransactionRequest } from './routes/transactionsProxy';
+import { updateCache } from './redisClient';
 const app = express();
 app.use(express.json());
-app.use(cors());
 app.use(cors({
     origin: '*', // Allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }));
+    allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
+}));
+
 app.use("/api-gateway/top-up", idempotencyMiddleware, topUpProxy);
+
+app.get("/transactions", handleTransactionRequest);
 
 // Create an HTTP server to host both the REST API and WebSocket server
 const server = createServer(app)
@@ -62,15 +67,21 @@ app.post('/api-gateway/bank-wehook-notification',async (req,res)=>{
 })
 
 app.post('/api-gateway/wallet-notification',async (req,res)=>{
-    const {message,userId,currentBalance} = req.body;
+    const {message,userId,currentBalance,newTransaction} = req.body;
     res.send({message: 'Notification received successfully from wallet-service'});
     const clientSocket = activeClients.get(userId);
     if(clientSocket && clientSocket.readyState === WebSocket.OPEN){
-        clientSocket.send(JSON.stringify({event:"wallet-notification",data:{message,currentBalance}}));
-        console.log(`Sent notification to client for userId: ${userId}`);
+        clientSocket.send(JSON.stringify({event:"wallet-notification",data:{message,currentBalance,newTransaction}}));
     }
     else{
         console.error(`WebSocket connection for userId ${userId} is not open.`);
+    }
+    try {
+        console.log(`updating cache for userId: ${userId}`);
+        const cacheKey = `${newTransaction.walletId}:first:10`;
+        await updateCache(cacheKey,newTransaction);
+    } catch (error) {
+        console.error('Error updating cache:',error);
     }
 }) 
 // Endpoint to receive the bank token from Payment Service
@@ -113,6 +124,8 @@ app.post('/wallet-service',async (req,res)=>{
     }
     res.send({message: 'message  sent to frontend successfully'});
 })
+
+
 // Start the server
 server.listen(8080, () => {
     console.log('API Gateway is running on port 8080');
@@ -129,3 +142,4 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+

@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import {  useEffect } from "react";
 import { useBalance } from "./useBalance";
+import { usePaginationStore } from "./usePaginationState";
 const useWebSocket = (userId: string) => {
+  const { setTransactions } = usePaginationStore.getState();
   useEffect(() => {
     // Ensure userId is passed as part of the WebSocket URL or in a message
     const socket = new WebSocket(`ws://localhost:8080?userId=${encodeURIComponent(userId)}`);
@@ -12,12 +14,18 @@ const useWebSocket = (userId: string) => {
     socket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        console.log('Received WebSocket message:', message);
         switch (message.event){
           case 'wallet-notification':
             if(message.data?.currentBalance!==undefined){
               const {setBalance} = useBalance.getState();
+              console.log('Wallet notification:', message.data);
               setBalance(message.data.currentBalance);
             }
+            if(message.data?.newTransaction){
+              console.log('New transaction:', message.data.newTransaction);
+              setTransactions((transactions) => [message.data.newTransaction, ...transactions]);
+            }   
             break;
               case 'Bank-Token':
                 if (message.data?.redirectUrl) {
