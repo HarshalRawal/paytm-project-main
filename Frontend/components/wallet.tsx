@@ -64,6 +64,8 @@ export default function WalletComponent() {
       });
       const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
       const { transactions: newTransactions, nextCursor } = data;
+      console.log("response", response);  
+      console.log("data", data);
       console.log("Fetched transactions:", newTransactions);
       setTransactions((prevTransactions: Transaction[]) => 
         newCursor ? [...prevTransactions, ...newTransactions] : newTransactions

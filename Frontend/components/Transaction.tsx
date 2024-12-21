@@ -37,7 +37,19 @@ export function Transaction({
         return <ArrowDownRight className="text-red-500 dark:text-red-400" size={24} />
     }
   }
+  function convertTo12HourFormat(time: string) {
+    // Split the time string into hours, minutes, and seconds
+    const [hour, minute, second] = time.split(':').map(Number);
 
+    // Determine AM or PM
+    const period = hour >= 12 ? 'PM' : 'AM';
+
+    // Convert hour to 12-hour format
+    const hour12 = hour % 12 || 12;
+
+    // Format the result
+    return `${hour12}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')} ${period}`;
+}
   return (
     <>
       <motion.div
@@ -54,7 +66,7 @@ export function Transaction({
               {transactionType.charAt(0) + transactionType.slice(1).toLowerCase().replace('_', ' ')}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {new Date(createdAt).toLocaleString()}
+              {convertTo12HourFormat(new Date(createdAt).toLocaleTimeString())}
             </p>
             <p className={`text-sm ${getStatusColor(status)}`}>
               {status.charAt(0) + status.slice(1).toLowerCase()}
@@ -88,8 +100,8 @@ export function Transaction({
               {from && <p><strong>From:</strong> {from}</p>}
               {to && <p><strong>To:</strong> {to}</p>}
               <p><strong>Wallet ID:</strong> {walletId}</p>
-              <p><strong>Created At:</strong> {new Date(createdAt).toLocaleString()}</p>
-              <p><strong>Updated At:</strong> {new Date(updatedAt).toLocaleString()}</p>
+              <p><strong>Created At:</strong> {convertTo12HourFormat(new Date(createdAt).toLocaleTimeString())}</p>
+              <p><strong>Updated At:</strong> {convertTo12HourFormat(new Date(updatedAt).toLocaleTimeString())}</p>
             </div>
           </DialogDescription>
         </DialogContent>

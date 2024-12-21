@@ -22,7 +22,7 @@ const useWebSocket = (userId: string) => {
               console.log('Wallet notification:', message.data);
               setBalance(message.data.currentBalance);
             }
-            if(message.data?.newTransaction){
+            if(message.data?.transactions){
               console.log('New transaction:', message.data.newTransaction);
               setTransactions((transactions) => [message.data.newTransaction, ...transactions]);
             }   
