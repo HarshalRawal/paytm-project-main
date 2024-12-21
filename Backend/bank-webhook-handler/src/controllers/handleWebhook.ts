@@ -19,7 +19,7 @@ export async function handleWebhook (req: Request, res: Response) {
     }
 
     const payloadString = JSON.stringify(req.body);
-    console.log("Payload String:", payloadString);
+    console.log("Payload String:", payloadString );
 
     // Verify the signature
     const verifySignatureResult = verifySignature(payloadString, signature, HMAC_SECRET);

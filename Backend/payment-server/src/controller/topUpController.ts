@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { processPayment } from '../utils/processPayment';
+import { PaymentType } from '@prisma/client';
 export const topUpController = async(req: Request, res: Response) => {
     console.log("Received top-up request");
     const { amount, userId ,walletId,idempotencyKey} = req.body;
@@ -11,7 +12,7 @@ export const topUpController = async(req: Request, res: Response) => {
     // L
     res.status(200).json({ message: "top-up request is being processed" });
     try {
-        await processPayment(idempotencyKey, userId, amount);
+        await processPayment(idempotencyKey, userId, amount ,PaymentType.TOP_UP);
     } catch (error) {
         
     }

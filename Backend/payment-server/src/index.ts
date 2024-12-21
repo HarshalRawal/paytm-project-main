@@ -3,6 +3,7 @@ import { connectDB,disconnectDB } from "./db";
 import { topUpController } from "./controller/topUpController";
 import { connectKafka,disconnectKafka } from "./consumer/consumer";
 import { consumeFromKafka } from "./consumer/consumer";
+import { withDrawController } from "./controller/withDrawController";
 const app = express();
 
 const PORT = 5007;
@@ -10,6 +11,7 @@ const PORT = 5007;
 app.use(express.json());
 
 app.post("/",topUpController);
+app.post("/withdraw" , withDrawController);
 
 
 async function startServer(){

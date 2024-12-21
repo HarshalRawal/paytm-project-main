@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import WebSocket from 'ws';
 import { idempotencyMiddleware } from './middleware/idempotencyMiddleware';
-import { topUpProxy } from './routes/route';
+import { topUpProxy, withDrawProxy } from './routes/route';
 import cors from 'cors';
 import { getBalance } from './utils/getBalance';
 import * as url from 'url';
@@ -19,6 +19,7 @@ app.use(cors({
 }));
 
 app.use("/api-gateway/top-up", idempotencyMiddleware, topUpProxy);
+app.use("/api-gateway/with-draw", idempotencyMiddleware, withDrawProxy);
 
 app.get("/transactions", handleTransactionRequest);
 
@@ -127,8 +128,10 @@ app.post('/api-gateway/bank-token', (req, res) => {
     }
     const clientSocket = activeClients.get(userId);
     if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
+
         const redirectUrl = `http://localhost:1000/Demo-bank/net-banking/${token}`;
         clientSocket.send(JSON.stringify({event:"Bank-Token",data:{PaymentId, redirectUrl,token} }));
+        
         console.log(`Sent bank token for Payment ID: ${PaymentId} to client`);
     } else {
         console.error(`WebSocket connection for userId ${userId} is not open.`);

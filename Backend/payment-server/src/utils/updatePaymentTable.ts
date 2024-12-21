@@ -19,7 +19,7 @@ import { prisma } from "../db";
 //     updatedAt      DateTime    @updatedAt
 //   }
 export async function updatePaymentTable({transactionType,bankReferenceId,userId,status,amount}: Payload) {
-   
+   console.log("Reached For Payment status Update")
     try {
         await prisma.paymentRequest.update({
             where: { bankReferenceId },

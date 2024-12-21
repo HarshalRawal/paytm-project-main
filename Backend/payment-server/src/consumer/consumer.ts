@@ -50,6 +50,7 @@ export   async function consumeFromKafka(topic:string){
                 const payload: Payload = JSON.parse(rawMessage);
                 console.log("Payload",payload);
                 await updatePaymentTable(payload);
+                console.log("Updated Successfully")
             },
         })
     } catch (error) {

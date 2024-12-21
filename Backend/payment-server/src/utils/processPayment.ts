@@ -1,7 +1,8 @@
 import { sendTokenToGateway } from "./sendToken";
 import axios from "axios";
-import { StoreNewPaymentRequest } from "./newPayment";
+import { StoreNewPaymentRequest, StoreWithdrawRequest } from "./newPayment";
 import { PaymentType, PaymentStatus } from "@prisma/client";
+import { sendWithDrawToBankWebhook } from "./withDrawbankWebHook";
 interface newPaymentRequest {
     bankReferenceId: string;
     PaymentType: PaymentType;
@@ -16,13 +17,14 @@ interface BankResponse {
     // Add other properties as needed
 }
 
-export async function processPayment(idempotencyKey:string, userId:string, amount:number) {
+export async function processPayment(idempotencyKey:string, userId:string, amount:number , type : PaymentType) {
     console.log("Processing payment for user:", userId, "Amount:", amount);
 
     try {
         const bankResponse = await axios.post<BankResponse>("http://localhost:4009/Demo-bank", {
             userId: userId,
             amount: amount,
+            type : type
         },{
             headers:{
                 'Content-Type': 'application/json',
@@ -35,6 +37,39 @@ export async function processPayment(idempotencyKey:string, userId:string, amoun
             console.log("Received token from bank:", token);
             const newPayment = await StoreNewPaymentRequest({idempotencyKey, userId, amount, bankReferenceId,PaymentType: PaymentType.TOP_UP, bankResponseStatus: PaymentStatus.PROCESSING});
             await sendTokenToGateway(token, userId,newPayment.id);
+        } else {
+            console.error("Invalid bank response:", bankResponse);
+        }
+    } catch (error) {
+        console.error("Error communicating with the bank server:", error);
+        throw new Error("Error processing payment");
+    }
+}
+
+
+export async function processWithdraw(idempotencyKey:string, userId:string, amount:number , type : PaymentType) {
+    console.log("Processing withdraw for user:", userId, "Amount:", amount);
+
+    try {
+        const bankResponse = await axios.post<BankResponse>("http://localhost:4009/Demo-bank", {
+            userId: userId,
+            amount: amount,
+            type : type
+
+        },{
+            headers:{
+                'Content-Type': 'application/json',
+            }
+        }
+        );
+        // retry logic if status code is not 200
+        if (bankResponse && bankResponse.data && bankResponse.status === 200) {
+            const {  bankReferenceId } = bankResponse.data;
+            console.log("Received bankReferenceid from bank:",bankReferenceId);
+            const newWithdraw = await StoreWithdrawRequest({idempotencyKey, userId, amount, bankReferenceId,PaymentType: PaymentType.WITHDRAWAL, bankResponseStatus: PaymentStatus.PROCESSING});
+            // await sendTokenToGateway(token, userId,newWithdraw.id);
+            // Nedd to send request to the bank webhook
+            // await sendWithDrawToBankWebhook;
         } else {
             console.error("Invalid bank response:", bankResponse);
         }

@@ -24,3 +24,22 @@ export async function TopUpRequest({userId,amount,walletId}:TopUpRequest){
         console.error("Error communicating with the paymentServer:", error);
     }
 }
+
+export async function WithDrawRequest({userId , amount , walletId} : TopUpRequest){
+    try {
+        const idempotencyKey = uuidv4();
+        const respone = await axios.post('http://localhost:8080/api-gateway/with-draw' , {
+            userId , 
+            amount ,
+            walletId
+        }, {
+            headers : {
+                'Content-Type' : 'application/json',
+                "idempotency-key" : idempotencyKey
+            }
+        })
+        console.log("WithDrawal requeset sent succesfully : ", respone);
+    } catch (error) {
+        console.error("Error communicating with the Payement Server");
+    }
+}

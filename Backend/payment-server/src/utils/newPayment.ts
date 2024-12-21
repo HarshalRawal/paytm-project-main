@@ -29,3 +29,25 @@ export async function StoreNewPaymentRequest(event: newPaymentRequest){
     }
 
 }
+
+export async function StoreWithdrawRequest(event: newPaymentRequest){
+    try {
+        const { bankReferenceId,PaymentType,idempotencyKey,userId,amount,bankResponseStatus } = event;
+        const newWithdraw =  await prisma.paymentRequest.create({
+            data: {
+                 userId: userId,
+                 amount: amount,
+                 idempotencyKey: idempotencyKey,
+                 bankReferenceId: bankReferenceId,
+                 PaymentStatus: bankResponseStatus,
+                 PaymentType: PaymentType,
+            }
+        });
+        console.log(`New withdraw Entry created in Database with id: ${newWithdraw.id}`);
+        return newWithdraw;
+    } catch (error) {
+        console.error("Error while creating a new Withdreaw Entry in Database:",error);
+        throw new Error("Failed to create a new Withdraw in database");
+    }
+
+}
