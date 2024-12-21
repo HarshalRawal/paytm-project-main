@@ -1,19 +1,27 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Wallet, CreditCard, DollarSign, ArrowUpRight, ArrowDownRight, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
+import { useState, useEffect, useCallback} from 'react'
+import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
+import axios from 'axios'
 import useWebSocket from '@/store/useWebhook'
 import { TopUpRequest, WithDrawRequest } from '@/lib/topUpRequest'
-
+import { RecentTransactions } from '@/components/RecentTransactions'
+import { Transaction, usePaginationStore } from '@/store/usePaginationState'
 export default function WalletComponent() {
-  const {balance,loading,error,fetchBalance} = useBalance();
-  const [transactions, setTransactions] = useState([
-    { id: 1, type: 'credit', amount: 500, date: '2023-05-15' },
-    { id: 2, type: 'debit', amount: 200, date: '2023-05-14' },
-    { id: 3, type: 'credit', amount: 1000, date: '2023-05-13' },
-  ])
+  const { balance, loading: balanceLoading, error: balanceError, fetchBalance } = useBalance();
+  const {
+    transactions,
+    cursor,
+    loading: transactionsLoading,
+    hasNextPage,
+    setTransactions,
+    setLoading,
+    setCursor,
+    setHasNextPage,
+  } = usePaginationStore();
+
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showTopUpModal, setShowTopUpModal] = useState(false)
@@ -21,8 +29,17 @@ export default function WalletComponent() {
   const [showExchangeRate, setShowExchangeRate] = useState(false)
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [isRedirect, setIsRedirect] = useState<boolean | null>(null);
 
+  useEffect(() => {
+    // Extract the `redirect` query parameter from the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirect = searchParams.get("redirect") === "true";
+    console.log('Redirect:', redirect);
+    setIsRedirect(redirect);
+  }, []);
   const userId = "3291280e-5400-490d-8865-49f6591c249c";
+  const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
   useWebSocket(userId);
 
   useEffect(() => {
@@ -35,15 +52,71 @@ export default function WalletComponent() {
     localStorage.setItem('darkMode', isDarkMode.toString())
   }, [isDarkMode])
 
+  const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:8080/transactions', {
+        params: {
+          walletId,
+          cursor: newCursor,
+          limit: 10,
+        },
+      });
+      const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+      const { transactions: newTransactions, nextCursor } = data;
+      console.log("Fetched transactions:", newTransactions);
+      setTransactions((prevTransactions: Transaction[]) => 
+        newCursor ? [...prevTransactions, ...newTransactions] : newTransactions
+      );
+      setCursor(nextCursor);
+      setHasNextPage(!!nextCursor);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [walletId, setTransactions, setCursor, setHasNextPage, setLoading]);
+  
   useEffect(() => {
-    const fetchUserBalance = async () => {
-      const userId = "3291280e-5400-490d-8865-49f6591c249c";
-      await fetchBalance(userId);
-    };
+    if (isRedirect === null) {
+      // Skip until isRedirect is initialized
+      return;
+    }
+  
+    if (!isRedirect) {
+      console.log(isRedirect);
+      console.log('fetching initial balance and transactions');
+      
+      const fetchUserBalance = async () => {
+        await fetchBalance(userId);
+      };
+  
+      fetchUserBalance();
+      fetchTransactions();
+    } else {
+      setLoading(true);
+    }
+  }, [isRedirect, userId, walletId, fetchBalance, setLoading, fetchTransactions]);
+     useEffect(()=>{
+      if(isRedirect==null){
+        return;
+      }
+      if(isRedirect){
+         const newUrl = window.location.pathname; // This will remove the query parameters
+        window.history.pushState({}, '', newUrl);
+      }
+     },[isRedirect])
 
-    fetchUserBalance();
-  }, [fetchBalance]);
-
+  const handleLoadMore = () => {
+    if (hasNextPage && !transactionsLoading) {
+      fetchTransactions(cursor);
+    }
+  };
+  const handleLoadMore = () => {
+    if (hasNextPage && !transactionsLoading) {
+      fetchTransactions(cursor);
+    }
+  };
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
   }
@@ -60,9 +133,7 @@ export default function WalletComponent() {
   const submitTopUp = async() => {
     const amount = parseFloat(topUpAmount)
     if (!isNaN(amount) && amount > 0) {
-      const userId = '3291280e-5400-490d-8865-49f6591c249c';
-      const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
-      TopUpRequest({userId,walletId,amount});
+      TopUpRequest({userId, walletId, amount});
       closeTopUpModal()
     }
   }
@@ -86,11 +157,12 @@ export default function WalletComponent() {
     }
   }
 
-  const refreshBalance = () => {
+   const refreshBalance = () => {
     setIsRefreshing(true)
-    setTimeout(() => {
+    fetchBalance(userId).finally(() => {
       setIsRefreshing(false)
-    }, 1500)
+    })
+  }
   }
 
   const toggleExchangeRate = () => {
@@ -141,10 +213,10 @@ export default function WalletComponent() {
                 <Wallet className="text-blue-500 dark:text-blue-400" size={24} />
               </div>
               <div className="balance-display">
-                {loading ? (
+                {balanceLoading ? (
                   <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">Loading...</p>
-                ) : error ? (
-                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{error}</p>
+                ) : balanceError ? (
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">{balanceError}</p>
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
@@ -152,6 +224,7 @@ export default function WalletComponent() {
                     </p>
                     {showExchangeRate && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        {/* Exchange rate logic here */}
                       </p>
                     )}
                   </>
@@ -198,43 +271,17 @@ export default function WalletComponent() {
             </motion.div>
           </div>
 
-          <motion.div 
-            className="rounded-lg bg-white p-6 shadow-md dark:bg-gray-700"
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-200">Recent Transactions</h2>
-            <div className="space-y-4">
-              {transactions.map((transaction, index) => (
-                <motion.div
-                  key={transaction.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 p-4 transition-all duration-300 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-gray-500"
-                >
-                  <div className="flex items-center space-x-4">
-                    {transaction.type === 'credit' ? (
-                      <ArrowUpRight className="text-green-500 dark:text-green-400" size={24} />
-                    ) : (
-                      <ArrowDownRight className="text-red-500 dark:text-red-400" size={24} />
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-800 dark:text-gray-200">
-                        {transaction.type === 'credit' ? 'Received' : 'Sent'}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{transaction.date}</p>
-                    </div>
-                  </div>
-                  <p className={`font-semibold ${
-                    transaction.type === 'credit' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                  }`}>
-                    {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
+            <RecentTransactions 
+              transactions={transactions}
+              loading={transactionsLoading}
+              hasNextPage={hasNextPage}
+              onLoadMore={handleLoadMore}
+            />
           </motion.div>
 
           <div className="mt-8 text-center">

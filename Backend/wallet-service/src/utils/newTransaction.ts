@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma";
 import { Payload } from "../consumer/consumer";
+import { Transaction } from "@prisma/client";
 export async function createNewTransaction({amount,status,transactionType}:Payload,walletId:string){
     try {
         const newTransaction = await prisma.transaction.create({

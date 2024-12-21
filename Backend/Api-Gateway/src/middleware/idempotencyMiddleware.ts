@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { idempotencyKeyExists } from "../redisClient";
-import { getIdempotencyResponse } from "../redisClient";
-import { storeIdempotencyKey } from "../redisClient";
+import { idempotencyKeyExists } from "../redis/redisClient";
+import { getIdempotencyResponse } from "../redis/redisClient";
+import { storeIdempotencyKey } from "../redis/redisClient";
 export async function idempotencyMiddleware(req:Request,res:Response,next:NextFunction):Promise<void>{
    console.log("request received in idempotency middleware");
     const idempotencyKey = req.headers["idempotency-key"];
