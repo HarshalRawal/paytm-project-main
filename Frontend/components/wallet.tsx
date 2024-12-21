@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback} from 'react'
 import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
@@ -28,7 +28,15 @@ export default function WalletComponent() {
   const [showTopUpModal, setShowTopUpModal] = useState(false)
   const [topUpAmount, setTopUpAmount] = useState('')
   const [showExchangeRate, setShowExchangeRate] = useState(false)
+  const [isRedirect, setIsRedirect] = useState<boolean | null>(null);
 
+  useEffect(() => {
+    // Extract the `redirect` query parameter from the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirect = searchParams.get("redirect") === "true";
+    console.log('Redirect:', redirect);
+    setIsRedirect(redirect);
+  }, []);
   const userId = "3291280e-5400-490d-8865-49f6591c249c";
   const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
   useWebSocket(userId);
@@ -42,14 +50,6 @@ export default function WalletComponent() {
     document.documentElement.classList.toggle('dark', isDarkMode)
     localStorage.setItem('darkMode', isDarkMode.toString())
   }, [isDarkMode])
-
-  useEffect(() => {
-    const fetchUserBalance = async () => {
-      await fetchBalance(userId);
-    };
-
-    fetchUserBalance();
-  }, [fetchBalance, userId]);
 
   const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
     setLoading(true);
@@ -75,10 +75,36 @@ export default function WalletComponent() {
       setLoading(false);
     }
   }, [walletId, setTransactions, setCursor, setHasNextPage, setLoading]);
-
+  
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    if (isRedirect === null) {
+      // Skip until isRedirect is initialized
+      return;
+    }
+  
+    if (!isRedirect) {
+      console.log(isRedirect);
+      console.log('fetching initial balance and transactions');
+      
+      const fetchUserBalance = async () => {
+        await fetchBalance(userId);
+      };
+  
+      fetchUserBalance();
+      fetchTransactions();
+    } else {
+      setLoading(true);
+    }
+  }, [isRedirect, userId, walletId, fetchBalance, setLoading, fetchTransactions]);
+     useEffect(()=>{
+      if(isRedirect==null){
+        return;
+      }
+      if(isRedirect){
+         const newUrl = window.location.pathname; // This will remove the query parameters
+        window.history.pushState({}, '', newUrl);
+      }
+     },[isRedirect])
 
   const handleLoadMore = () => {
     if (hasNextPage && !transactionsLoading) {
