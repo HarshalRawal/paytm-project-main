@@ -114,11 +114,6 @@ export default function WalletComponent() {
       fetchTransactions(cursor);
     }
   };
-  const handleLoadMore = () => {
-    if (hasNextPage && !transactionsLoading) {
-      fetchTransactions(cursor);
-    }
-  };
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
   }
