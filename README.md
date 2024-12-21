@@ -7,7 +7,7 @@ This repository provides instructions for setting up the backend services using 
 - [Step 1: Create Docker Volumes](#step-1-create-docker-volumes)
 - [Step 2: Run PostgreSQL Containers](#step-2-run-postgresql-containers)
   - [API Gateway](#1-api-gateway)
-  - [User ](#2-user-server)
+  - [Top-Up Server](#2-top-up-server)
   - [Bank](#3-bank)
   - [Bank Web Hook Server](#4-bank-web-hook-server)
   - [Payment](#5-payment)
@@ -25,6 +25,7 @@ Create the necessary volumes for the different backend services (this step shoul
 ```bash
 docker volume create user-data
 docker volume create api-gateway-data
+docker volume create top-up-server-data
 docker volume create bank-data
 docker volume create bank-web-hook-server-data
 docker volume create payment-data
@@ -56,6 +57,16 @@ docker run -d \
   -e POSTGRES_USER=api_user \
   -e POSTGRES_PASSWORD=api_password \
   -e POSTGRES_DB=api_gateway_db \
+  postgres
+
+# top-up-server Postgres container running on port 3001
+docker run -d \
+  --name top-up-server-db \
+  -p 3001:5432 \
+  -v top-up-server-data:/var/lib/postgresql/data \
+  -e POSTGRES_USER=topup_user \
+  -e POSTGRES_PASSWORD=topup_password \
+  -e POSTGRES_DB=top_up_server_db \
   postgres
 
 # bank Postgres container running on port 4002
@@ -111,6 +122,9 @@ DATABASE_URL=postgresql://user:user_password@localhost:6000/user_db
 # api-gateway .env
   <!-- api-gate , bank not needed -->
 DATABASE_URL=postgresql://api_user:api_password@localhost:8000/api_gateway_db 
+
+# top-up-server .env
+DATABASE_URL=postgresql://topup_user:topup_password@localhost:3001/top_up_server_db
 
 # bank .env
 DATABASE_URL=postgresql://bank_user:bank_password@localhost:4002/bank_db

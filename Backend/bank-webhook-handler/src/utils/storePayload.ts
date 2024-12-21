@@ -1,11 +1,15 @@
 import { prisma } from "../db";
-import {eventType}  from "@prisma/client";
 export interface Payload {
     transactionType: eventType;
     bankReferenceId: string;
     userId: string;
     status: string;
     amount: number;
+    type : PaymentType
+}
+enum PaymentType{
+  "TOP_UP",
+  "WITHDRAWAL"
 }
 
 // model Outbox {
@@ -16,7 +20,7 @@ export interface Payload {
 //     createdAt DateTime @default(now())
 //     updatedAt DateTime @updatedAt
 //   }
-
+import { eventType } from "@prisma/client";
 export const storePayload = async ({transactionType,bankReferenceId,userId,status,amount}:Payload) => {
       try {
         const newOutbox = await prisma.outbox.create({

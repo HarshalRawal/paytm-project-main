@@ -32,7 +32,7 @@ export async function disconnectProducer(){
 export const produceToKafka = async (topic: string, outboxId: string) => {
     try {
         // Use a transaction to ensure all operations are atomic
-        await prisma.$transaction(async (prisma : any) => {
+        await prisma.$transaction(async (prisma:any) => {
             // Lock the event to prevent duplicate processing
             await prisma.outbox.update({
                 where: { id: outboxId },
@@ -106,7 +106,7 @@ export const produceToKafka = async (topic: string, outboxId: string) => {
 // backGroundEventProducer function
 export async function backGroundEventProducer(topic:string) {
     try {
-         await prisma.$transaction (async (prisma : any)=>{
+         await prisma.$transaction (async (prisma:any)=>{
            
             const unpublishedEvents = await prisma.outbox.findMany({
                 where:{
@@ -122,7 +122,7 @@ export async function backGroundEventProducer(topic:string) {
             await prisma.outbox.updateMany({
                 where: {
                     id: {
-                        in: unpublishedEvents.map((event : any) => event.id),
+                        in: unpublishedEvents.map((event:any) => event.id),
                     },
                 },
                 data: {  // Set published status to true

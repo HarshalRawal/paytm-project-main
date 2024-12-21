@@ -4,24 +4,24 @@ import axios from "axios";
 import * as crypto from "crypto";
 import { generateTransactionId } from "./bankFuncitons";
 import { isSuccess } from "./bankFuncitons";
-
+import cors from "cors";
 const app = express();
 app.use(express.json())
 
 // Secret key for HMAC signing
 const HMAC_SECRET = 'mysecretkey';
-
+app.use(cors());
 // Function to create HMAC SHA256 signature
 function createSignature(payload:string) {
     return crypto.createHmac('sha256', HMAC_SECRET).update(payload).digest('hex');
 }
 
-app.post('/Demo-bank', (req, res) => {
+app.post('/Demo-bank', async(req, res) => {
     console.log("Request reached the bank server");
 
     try {
         // Validate the request body
-        const { userId, amount } = req.body;
+        const { userId, amount , type} = req.body;
         if (!userId || !amount) {
             res.status(400).send({ error: "Missing required fields: userId and amount." });
             return;
@@ -37,11 +37,48 @@ app.post('/Demo-bank', (req, res) => {
         const token = Buffer.from(JSON.stringify(tokenData)).toString('base64');
 
         // Send the token and bankReferenceId back in the response
-        res.status(200).send({
-            token,
-            bankReferenceId,
-        });
-        console.log(`Generated token: ${token} with userId: ${userId} and amount: ${amount} for tracking ID: ${bankReferenceId}`);
+        if(type == "TOP_UP"){
+            res.status(200).send({
+                token,
+                bankReferenceId,
+            });
+            console.log(`Generated token: ${token} with userId: ${userId} and amount: ${amount} for tracking ID: ${bankReferenceId}`);
+        }else{
+            res.status(200).send({
+                bankReferenceId
+            })
+            const status = 'SUCCESS';
+
+            const payload = {
+                transactionType: "WITHDRAWAL",
+                bankReferenceId: bankReferenceId,
+                userId,
+                status,
+                amount,
+            };
+            const payloadString = JSON.stringify(payload);
+            
+            console.log("Payload String:", payloadString);
+            const signature = createSignature(payloadString);
+        
+            try {
+                // Send the webhook notification to the bank-webhook-handler
+                console.log("signature is " + signature);
+                const respone  = await axios.post("http://localhost:5002/api/BankWebhook", JSON.stringify(payload), {
+                    headers: {
+                        'Content-Type': 'application/json', // Set the content type to application/json
+                        'bank-signature': signature,
+                    },
+                });
+               console.log({ message: 'Transaction(withdrawal) processed and webhook sent successfully' });
+                return;
+            } catch (error) {
+                console.error('Error sending webhook:', error);
+                // res.status(500).json({ error: 'Failed to send webhook notification' });
+                return;
+            }
+        }
+        
         return;
     } catch (error) {
         console.error("Error processing the request:", error);
@@ -109,5 +146,5 @@ app.post('/Demo-bank/net-banking/:token', async (req, res) => {
 
 
 
-app.listen(4008);
-console.log(" bank server is running on port 4008")
+app.listen(4009);
+console.log(" bank server is running on port 4009")

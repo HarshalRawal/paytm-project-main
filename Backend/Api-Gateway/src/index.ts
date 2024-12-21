@@ -2,11 +2,20 @@ import express from 'express';
 import { createServer } from 'http';
 import WebSocket from 'ws';
 import { idempotencyMiddleware } from './middleware/idempotencyMiddleware';
-import { topUpProxy } from './routes/route';
-
+import { topUpProxy, withDrawProxy } from './routes/route';
+import cors from 'cors';
+import { getBalance } from './utils/getBalance';
+import * as url from 'url';
 const app = express();
 app.use(express.json());
+app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
 app.use("/api-gateway/top-up", idempotencyMiddleware, topUpProxy);
+app.use("/api-gateway/with-draw", idempotencyMiddleware, withDrawProxy);
 
 // Create an HTTP server to host both the REST API and WebSocket server
 const server = createServer(app)
@@ -18,25 +27,26 @@ const wss = new WebSocket.Server({ server });
 const activeClients: Map<string, WebSocket> = new Map();
 
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
-    console.log(`Client connected: ${ws}`);
+wss.on('connection', (ws,req) => {
+    const reqUrl = req.url || '' ;
+    const queryParams = url.parse(reqUrl,true).query
+    const userId = queryParams.userId as string;
+    
 
-    // Listen for messages from the client to register user ID
-    ws.on('message', (message) => {
-        const { userId } = JSON.parse(message.toString());
-        console.log(`Client registered for userId: ${userId}`);
-        activeClients.set(userId, ws);
-    });
-
+    if(!userId){
+        ws.close(1008, 'User ID is required');
+        return;
+    }
+    console.log(`web-socket connection established for userId ${userId}`);
+    activeClients.set(userId, ws);
     // Handle client disconnection
     ws.on('close', () => {
-        console.log(`Client disconnected: ${ws}`);
-        // Remove disconnected client from active connections
-        activeClients.forEach((client, userId) => {
-            if (client === ws) {
-                activeClients.delete(userId);
-            }
-        });
+        console.log(`WebSocket connection closed for userId ${userId}`);
+        activeClients.delete(userId);
+    });
+    ws.on('error', (error) => {
+        console.error(`WebSocket error for userId ${userId}:`, error);
+        activeClients.delete(userId); // Remove on error as well
     });
 });
 app.post('/api-gateway/bank-wehook-notification',async (req,res)=>{
@@ -44,7 +54,7 @@ app.post('/api-gateway/bank-wehook-notification',async (req,res)=>{
     res.send({message: 'Webhook notification received successfully from bank-webhook'});
     const clientSocket = activeClients.get(userId);
     if(clientSocket && clientSocket.readyState === WebSocket.OPEN){
-        clientSocket.send(JSON.stringify({transactionStatus,message}));
+        clientSocket.send(JSON.stringify({event:"bank-webhook",data:{transactionStatus,message}}));
         console.log(`Sent webhook notification to client for userId: ${userId}`);
     }
     else{
@@ -53,11 +63,11 @@ app.post('/api-gateway/bank-wehook-notification',async (req,res)=>{
 })
 
 app.post('/api-gateway/wallet-notification',async (req,res)=>{
-    const {message,userId} = req.body;
+    const {message,userId,currentBalance} = req.body;
     res.send({message: 'Notification received successfully from wallet-service'});
     const clientSocket = activeClients.get(userId);
     if(clientSocket && clientSocket.readyState === WebSocket.OPEN){
-        clientSocket.send(JSON.stringify({message}));
+        clientSocket.send(JSON.stringify({event:"wallet-notification",data:{message,currentBalance}}));
         console.log(`Sent notification to client for userId: ${userId}`);
     }
     else{
@@ -74,15 +84,26 @@ app.post('/api-gateway/bank-token', (req, res) => {
     }
     const clientSocket = activeClients.get(userId);
     if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
-        const redirectUrl = `http://localhost:4008/Demo-bank/net-banking/${token}`;
-        clientSocket.send(JSON.stringify({ PaymentId, redirectUrl, token }));
+
+        const redirectUrl = `http://localhost:1000/Demo-bank/net-banking/${token}`;
+        clientSocket.send(JSON.stringify({event:"Bank-Token",data:{PaymentId, redirectUrl,token} }));
+        
         console.log(`Sent bank token for Payment ID: ${PaymentId} to client`);
     } else {
         console.error(`WebSocket connection for userId ${userId} is not open.`);
     }
     res.status(200).json({ message: 'Token received and sent to client' });
 });
-
+ app.post('/api-gateway/getBalance',async (req,res)=>{
+try {
+        const userId = req.body.userId;
+        console.log(`Getting balance for userId: ${userId}`);
+        const balance = await getBalance(userId);
+        res.status(200).json(balance);
+} catch (error) {
+    console.error('Error getting balance:', error);
+}
+    });
 app.post('/wallet-service',async (req,res)=>{
     const amount = req.body.amount;
     const walletId = req.body.walletId;

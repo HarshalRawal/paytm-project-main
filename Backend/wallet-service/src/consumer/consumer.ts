@@ -59,7 +59,7 @@ export async function consumeFromKafka(topic: string) {
                 await createNewTransaction(payload,updatedWallet.id);
 
                 // Send notification    
-                await sendNotification(payload.userId,`Successfully ${payload.transactionType}ed ${payload.amount} to your wallet`);
+                await sendNotification(payload.userId,`Successfully ${payload.transactionType}ed ${payload.amount} to your wallet`,updatedWallet.balance);
                
                 console.log("Transaction processed successfully");
             }
