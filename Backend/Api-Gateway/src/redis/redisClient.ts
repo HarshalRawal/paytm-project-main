@@ -72,10 +72,11 @@ export async function idempotencyKeyExists(idempotencyKey:string):Promise<boolea
  export async function checkTransactionInCache(cacheKey: string): Promise<string | null> {
   try {
     const client = await initRedisClient();
-    const cachedData = await client.get(cacheKey);
+    const cachedData = await client.get(cacheKey);;
     if (cachedData) {
       console.log("Cache hit for key:", cacheKey);
-      return cachedData;
+      const transactions = JSON.parse(cachedData);
+      return transactions;
     } else {
       console.log("Cache miss for key:", cacheKey);
       return null;
@@ -97,38 +98,101 @@ export async function storeTransactionInCache(cacheKey: string, data: any, ttl: 
   }
 }
 
-export async function updateTransactionInCache(cacheKey: string, newTransaction: any): Promise<void> {
+// export async function updateTransactionInCache(cacheKey: string, newTransaction: any): Promise<void|any[]> {
+//   try {
+//     const client = await initRedisClient();
+
+//     // Fetch the existing cache data
+//     const cachedData = await client.get(cacheKey);
+//     let transactions: any[] = [];
+//     // Parse the cached data if it exists
+//     if (cachedData) {
+//       try {
+//         const parsedData = JSON.parse(cachedData);
+//         if(parsedData.transactions){
+//          transactions = parsedData.transactions;
+//          console.log("transactions",transactions);
+//         }
+//         if (!Array.isArray(transactions)) {
+//           throw new Error(`Cached data for key "${cacheKey}" is not an array.`);
+//         }
+//       } catch (parseError) {
+//         console.error(`Error parsing cached data for key "${cacheKey}":`, parseError);
+//         transactions = []; // Reset to an empty array if parsing fails
+//       }
+//     }
+//     const 
+//     // Add the new transaction to the beginning of the array
+//     transactions.unshift(newTransaction);
+
+//     // Trim the array to keep only the first 10 transactions
+//     //transactions = transactions.slice(0, 10);
+//     // Update the cache with the modified data and set expiration time
+//     await client.setEx(cacheKey, 3600, JSON.stringify({ transactions,nextCursor }));
+//     console.log(`Cache updated for key: "${cacheKey}" with new transaction.`);
+//     return transactions;
+//   } catch (error) {
+//     console.error(`Error updating cache for key "${cacheKey}":`, error);
+//   }
+// }
+
+export async function updateTransactionInCache(userId:string, newTransaction:any) {
   try {
     const client = await initRedisClient();
 
-    // Fetch the existing cache data
-    const cachedData = await client.get(cacheKey);
-    let transactions: any[] = [];
+    // Get all related keys for the user
+    const relatedKeys = await client.keys(`transactions:${userId}:*`);
+    relatedKeys.sort(); // Sort keys to process in order, e.g., page:1 -> page:2
 
-    // Parse the cached data if it exists
-    if (cachedData) {
-      try {
-        transactions = JSON.parse(cachedData);
-        if (!Array.isArray(transactions)) {
-          throw new Error(`Cached data for key "${cacheKey}" is not an array.`);
+    let carryOverTransaction = newTransaction; // Start with the new transaction
+
+    for (const cacheKey of relatedKeys) {
+      // Fetch existing transactions for the current key
+      const cachedData = await client.get(cacheKey);
+      let transactions = [];
+      let parsedData = [];
+      let nextCursor = null;
+      if (cachedData) {
+        try {
+          parsedData = JSON.parse(cachedData);
+          if (parsedData.transactions) {
+            transactions = parsedData.transactions;
+          }
+          if (!Array.isArray(transactions)) {
+            console.warn(`Cached data for key "${cacheKey}" is not an array. Resetting to empty array.`);
+            transactions = [];
+          }
+        } catch (parseError) {
+          console.error(`Error parsing cached data for key "${cacheKey}":`, parseError);
+          transactions = [];
         }
-      } catch (parseError) {
-        console.error(`Error parsing cached data for key "${cacheKey}":`, parseError);
-        transactions = []; // Reset to an empty array if parsing fails
       }
+
+      // Add the carry-over transaction to the start of this array
+      if (carryOverTransaction) {
+        transactions.unshift(carryOverTransaction);
+      }
+
+      // Keep only the first 10 transactions, and move the overflow to carry-over
+      if (transactions.length > 10) {
+        carryOverTransaction = transactions.pop(); // Move the last transaction to carry-over
+      } else {
+        carryOverTransaction = null; // No more carry-over needed
+      }
+
+      nextCursor = transactions[9].createdAt || null;
+      console.log("nextCursor",nextCursor);
+      await client.setEx(cacheKey, 3600, JSON.stringify({ transactions, nextCursor }));
+      console.log(`Cache updated for key: "${cacheKey}"`);
     }
 
-    // Add the new transaction to the beginning of the array
-    transactions.unshift(newTransaction);
-
-    // Trim the array to keep only the first 10 transactions
-    transactions = transactions.slice(0, 10);
-
-    // Update the cache with the modified data and set expiration time
-    await client.setEx(cacheKey, 3600, JSON.stringify(transactions));
-    console.log(`Cache updated for key: "${cacheKey}" with new transaction.`);
+    // If there's still a carry-over transaction, log it
+    if (carryOverTransaction) {
+      console.warn(`Carry-over transaction could not be stored:`, carryOverTransaction);
+    }
   } catch (error) {
-    console.error(`Error updating cache for key "${cacheKey}":`, error);
+    console.error(`Error updating cache for userId "${userId}":`, error);
   }
 }
+
 

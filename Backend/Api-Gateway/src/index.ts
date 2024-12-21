@@ -73,11 +73,13 @@ const pendingNotifications = new Map(); // Key: userId, Value: Array of notifica
 app.post('/api-gateway/wallet-notification', async (req, res) => {
     const { message, userId, currentBalance, newTransaction } = req.body;
     console.log('Received wallet notification:', req.body);
-
+    console.log(`Updating transaction in cache for userId: ${userId}`);
+    const cacheKey = `transactions:${newTransaction.walletId}:first:10`;
+   const transactions =  await updateTransactionInCache(cacheKey, newTransaction);
     const clientSocket = activeClients.get(userId);
     const notification = {
         event: "wallet-notification",
-        data: { message, currentBalance, newTransaction }
+        data: { message, currentBalance, transactions }
     };
 
     if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
@@ -92,9 +94,6 @@ app.post('/api-gateway/wallet-notification', async (req, res) => {
     }
 
     try {
-        console.log(`Updating transaction in cache for userId: ${userId}`);
-        const cacheKey = `transactions:${newTransaction.walletId}:first:10`;
-        await updateTransactionInCache(cacheKey, newTransaction);
         console.log(`updating balance in cache for userId: ${userId}`);
         await updateBalanceInRedis(userId,currentBalance);
     } catch (error) {
