@@ -5,6 +5,11 @@ export interface Payload {
     userId: string;
     status: string;
     amount: number;
+    type : PaymentType
+}
+enum PaymentType{
+  "TOP_UP",
+  "WITHDRAWAL"
 }
 
 // model Outbox {

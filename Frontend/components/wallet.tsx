@@ -5,7 +5,8 @@ import { Wallet, CreditCard, DollarSign, ArrowUpRight, ArrowDownRight, RefreshCw
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
 import useWebSocket from '@/store/useWebhook'
-import { TopUpRequest } from '@/lib/topUpRequest'
+import { TopUpRequest, WithDrawRequest } from '@/lib/topUpRequest'
+
 export default function WalletComponent() {
   const {balance,loading,error,fetchBalance} = useBalance();
   const [transactions, setTransactions] = useState([
@@ -17,8 +18,9 @@ export default function WalletComponent() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showTopUpModal, setShowTopUpModal] = useState(false)
   const [topUpAmount, setTopUpAmount] = useState('')
- // const [exchangeRate, setExchangeRate] = useState(1.2) // USD to EUR rate
   const [showExchangeRate, setShowExchangeRate] = useState(false)
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
+  const [withdrawAmount, setWithdrawAmount] = useState('')
 
   const userId = "3291280e-5400-490d-8865-49f6591c249c";
   useWebSocket(userId);
@@ -41,7 +43,7 @@ export default function WalletComponent() {
 
     fetchUserBalance();
   }, [fetchBalance]);
-   // Add `fetchBalance` to the dependency array
+
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
   }
@@ -65,12 +67,29 @@ export default function WalletComponent() {
     }
   }
 
+  const handleWithdraw = () => {
+    setShowWithdrawModal(true)
+  }
+
+  const closeWithdrawModal = () => {
+    setShowWithdrawModal(false)
+    setWithdrawAmount('')
+  }
+
+  const submitWithdraw = async() => {
+    const amount = parseFloat(withdrawAmount)
+    if (!isNaN(amount) && amount > 0) {
+      const userId = '3291280e-5400-490d-8865-49f6591c249c';
+      const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
+      WithDrawRequest({userId, walletId, amount});
+      closeWithdrawModal()
+    }
+  }
+
   const refreshBalance = () => {
     setIsRefreshing(true)
     setTimeout(() => {
       setIsRefreshing(false)
-      // Simulating balance update
-    //  setBalance(prevBalance => prevBalance + Math.random() * 100)
     }, 1500)
   }
 
@@ -133,7 +152,6 @@ export default function WalletComponent() {
                     </p>
                     {showExchangeRate && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        {/* ≈ €{balance ? (balance * exchangeRate) : "N/A"} */}
                       </p>
                     )}
                   </>
@@ -150,21 +168,33 @@ export default function WalletComponent() {
               </button>
             </motion.div>
             <motion.div 
-              className="rounded-lg bg-green-50 p-6 dark:bg-gray-700"
+              className="rounded-lg bg-blue-50 p-6 dark:bg-gray-700"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Top Up</h2>
-                <CreditCard className="text-green-500 dark:text-green-400" size={24} />
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Actions</h2>
+                <div className="flex space-x-2">
+                  <CreditCard className="text-green-500 dark:text-green-400" size={24} />
+                  <ArrowDownRight className="text-red-500 dark:text-red-400" size={24} />
+                </div>
               </div>
-              <button
-                onClick={handleTopUp}
-                className="group relative w-full overflow-hidden rounded-lg bg-green-500 px-4 py-3 font-semibold text-white transition-all duration-300 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-              >
-                <span className="relative z-10">Request Top Up</span>
-                <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 transform opacity-0 transition-all duration-300 group-hover:right-3 group-hover:opacity-100" size={20} />
-              </button>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={handleTopUp}
+                  className="group relative w-full overflow-hidden rounded-lg bg-green-500 px-4 py-3 font-semibold text-white transition-all duration-300 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                >
+                  <span className="relative z-10">Top Up</span>
+                  <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 transform opacity-0 transition-all duration-300 group-hover:right-3 group-hover:opacity-100" size={20} />
+                </button>
+                <button
+                  onClick={handleWithdraw}
+                  className="group relative w-full overflow-hidden rounded-lg bg-red-500 px-4 py-3 font-semibold text-white transition-all duration-300 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                >
+                  <span className="relative z-10">Withdraw</span>
+                  <ArrowDownRight className="absolute right-4 top-1/2 -translate-y-1/2 transform opacity-0 transition-all duration-300 group-hover:right-3 group-hover:opacity-100" size={20} />
+                </button>
+              </div>
             </motion.div>
           </div>
 
@@ -256,7 +286,43 @@ export default function WalletComponent() {
             </motion.div>
           </motion.div>
         )}
+        {showWithdrawModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-gray-800"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">Withdraw from Your Wallet</h2>
+                <button onClick={closeWithdrawModal} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                  <X size={24} />
+                </button>
+              </div>
+              <input
+                type="number"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="Enter amount"
+                className="mb-4 w-full rounded-lg border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+              <button
+                onClick={submitWithdraw}
+                className="w-full rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors duration-300 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+              >
+                Confirm Withdraw
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   )
 }
+

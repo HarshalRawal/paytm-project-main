@@ -5,7 +5,8 @@ CREATE TYPE "eventType" AS ENUM ('TOP_UP', 'WITHDRAWAL');
 CREATE TABLE "Outbox" (
     "id" TEXT NOT NULL,
     "eventType" "eventType" NOT NULL,
-    "published" BOOLEAN NOT NULL,
+    "published" BOOLEAN NOT NULL DEFAULT false,
+    "locked" BOOLEAN NOT NULL DEFAULT false,
     "Payload" JSONB NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
