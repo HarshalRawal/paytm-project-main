@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback} from 'react'
-import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
+import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft, ArrowDownRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
 import axios from 'axios'
@@ -114,11 +114,6 @@ export default function WalletComponent() {
       fetchTransactions(cursor);
     }
   };
-  const handleLoadMore = () => {
-    if (hasNextPage && !transactionsLoading) {
-      fetchTransactions(cursor);
-    }
-  };
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
   }
@@ -165,11 +160,10 @@ export default function WalletComponent() {
       setIsRefreshing(false)
     })
   }
-  }
-
   const toggleExchangeRate = () => {
     setShowExchangeRate(!showExchangeRate)
   }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 transition-colors duration-300 dark:bg-gray-900">
