@@ -25,7 +25,7 @@ export async function bankLogin({ username, password, token }: { username: strin
       
       // Adding a small delay before redirecting to ensure the browser processes the response
       setTimeout(() => {
-        window.location.href = "http://localhost:3000/wallet";  // Update this URL as needed
+        window.location.href = "http://localhost:3000/wallet?redirect=true";  // Update this URL as needed
       }, 500); // 500 ms delay
     } else {
       console.error('Login failed:', data.message || 'Unknown error');

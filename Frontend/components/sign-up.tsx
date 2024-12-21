@@ -37,6 +37,7 @@ export default function SignupPage() {
       password : password,
       email : email
     })
+    console.log(newuser)
   }
 
   return (

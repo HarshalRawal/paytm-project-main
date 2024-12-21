@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { checkCache, storeCache } from '../redisClient'; // Assuming these functions are correct
+import { checkTransactionInCache,storeTransactionInCache } from '../redis/redisClient'; // Assuming these functions are correct
 import { fetchTransactionsFromWalletServer } from '../utils/getTransaction';
 
 export async function handleTransactionRequest(req: Request, res: Response): Promise<void> {
@@ -9,7 +9,7 @@ export async function handleTransactionRequest(req: Request, res: Response): Pro
 
   try {
     // Step 1: Check cache for data
-    const cachedData = await checkCache(cacheKey);
+    const cachedData = await checkTransactionInCache(cacheKey);
     if (cachedData) {
       console.log('Cache hit:', cacheKey);
       res.json(cachedData); // Return cached data if available
@@ -27,7 +27,7 @@ export async function handleTransactionRequest(req: Request, res: Response): Pro
     }
 
     // Step 3: Store the response in the cache (ensure it's an object, not stringified)
-    await storeCache(cacheKey, transactionsData);
+    await storeTransactionInCache(cacheKey, transactionsData);
 
     // Step 4: Send the data back to the client
     res.json(transactionsData);

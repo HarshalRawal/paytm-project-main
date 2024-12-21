@@ -69,7 +69,7 @@ export async function idempotencyKeyExists(idempotencyKey:string):Promise<boolea
     return await client.exists(idempotencyKey) === 1;
  }  
 
- export async function checkCache(cacheKey: string): Promise<string | null> {
+ export async function checkTransactionInCache(cacheKey: string): Promise<string | null> {
   try {
     const client = await initRedisClient();
     const cachedData = await client.get(cacheKey);
@@ -87,7 +87,7 @@ export async function idempotencyKeyExists(idempotencyKey:string):Promise<boolea
 }
 
 
-export async function storeCache(cacheKey: string, data: any, ttl: number = 3600): Promise<void> {
+export async function storeTransactionInCache(cacheKey: string, data: any, ttl: number = 3600): Promise<void> {
   try {
     const client = await initRedisClient();
     await client.setEx(cacheKey, ttl, JSON.stringify(data));
@@ -97,31 +97,38 @@ export async function storeCache(cacheKey: string, data: any, ttl: number = 3600
   }
 }
 
-export async function updateCache(cacheKey: string, newTransaction: any): Promise<void> {
+export async function updateTransactionInCache(cacheKey: string, newTransaction: any): Promise<void> {
   try {
     const client = await initRedisClient();
 
     // Fetch the existing cache data
     const cachedData = await client.get(cacheKey);
-    const transactions = cachedData ? JSON.parse(cachedData) : [];
+    let transactions: any[] = [];
 
-    // Validate that the cached data is an array
-    if (!Array.isArray(transactions)) {
-      throw new Error(`Cached data for key "${cacheKey}" is not an array.`);
+    // Parse the cached data if it exists
+    if (cachedData) {
+      try {
+        transactions = JSON.parse(cachedData);
+        if (!Array.isArray(transactions)) {
+          throw new Error(`Cached data for key "${cacheKey}" is not an array.`);
+        }
+      } catch (parseError) {
+        console.error(`Error parsing cached data for key "${cacheKey}":`, parseError);
+        transactions = []; // Reset to an empty array if parsing fails
+      }
     }
 
     // Add the new transaction to the beginning of the array
     transactions.unshift(newTransaction);
 
     // Trim the array to keep only the first 10 transactions
-    if (transactions.length > 10) {
-      transactions.pop();
-    }
+    transactions = transactions.slice(0, 10);
 
     // Update the cache with the modified data and set expiration time
     await client.setEx(cacheKey, 3600, JSON.stringify(transactions));
-    console.log(`Cache updated for key: "${cacheKey}"`);
+    console.log(`Cache updated for key: "${cacheKey}" with new transaction.`);
   } catch (error) {
     console.error(`Error updating cache for key "${cacheKey}":`, error);
   }
 }
+
