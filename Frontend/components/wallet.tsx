@@ -72,6 +72,7 @@ export default function WalletComponent() {
       );
       setCursor(nextCursor);
       setHasNextPage(!!nextCursor);
+      
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
