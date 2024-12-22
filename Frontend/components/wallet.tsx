@@ -147,6 +147,17 @@ export default function WalletComponent() {
   const submitWithdraw = async() => {
     const amount = parseFloat(withdrawAmount)
     if (!isNaN(amount) && amount > 0) {
+      if (balance === 0) {
+        alert("You cannot withdraw money when your balance is zero.")
+        return
+      }
+      if(balance !=null){
+        if (amount > balance) {
+          alert("You cannot withdraw more than your current balance.")
+          return
+        }
+      }
+      
       const userId = '3291280e-5400-490d-8865-49f6591c249c';
       const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
       WithDrawRequest({userId, walletId, amount});
@@ -357,7 +368,8 @@ export default function WalletComponent() {
               />
               <button
                 onClick={submitWithdraw}
-                className="w-full rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors duration-300 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                disabled={  balance == null||parseFloat(withdrawAmount) > balance || balance === 0}
+                className="w-full rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors duration-300 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm Withdraw
               </button>

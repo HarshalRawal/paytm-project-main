@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma";
 import { Payload } from "../consumer/consumer";
+import { Decimal } from 'decimal.js';
 export async function updateWalletBalance({amount,userId , transactionType}:Payload){
 
     if(transactionType ==  "TOP_UP"){
@@ -38,6 +39,12 @@ export async function updateWalletBalance({amount,userId , transactionType}:Payl
             if(!wallet){
                 throw new Error("Wallet not found");
             }
+
+            if (new Decimal(amount).greaterThan(wallet.balance)) {
+                console.log("Entered amount is greater than the Wallet Balance ")
+                return;
+            }
+            
             const updatedWallet = await prisma.wallet.update({
                 where:{
                     id:wallet.id
