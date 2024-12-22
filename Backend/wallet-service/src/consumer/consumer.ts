@@ -55,6 +55,11 @@ export async function consumeFromKafka(topic: string) {
                 console.log("Received message", payload);
                 // Update wallet balance
                const updatedWallet =  await updateWalletBalance(payload);
+               
+                if(updatedWallet == null){
+                    console.log("Upadted wallet is null ");
+                    return ;
+                }
                // Create new Transaction
                 const newTransaction = await createNewTransaction(payload,updatedWallet.id);
 
