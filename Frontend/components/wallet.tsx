@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback} from 'react'
-import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft } from 'lucide-react'
+import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft, ArrowDownRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
 import axios from 'axios'
@@ -147,6 +147,17 @@ export default function WalletComponent() {
   const submitWithdraw = async() => {
     const amount = parseFloat(withdrawAmount)
     if (!isNaN(amount) && amount > 0) {
+      if (balance === 0) {
+        alert("You cannot withdraw money when your balance is zero.")
+        return
+      }
+      if(balance !=null){
+        if (amount > balance) {
+          alert("You cannot withdraw more than your current balance.")
+          return
+        }
+      }
+      
       const userId = '3291280e-5400-490d-8865-49f6591c249c';
       const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
       WithDrawRequest({userId, walletId, amount});
@@ -160,11 +171,10 @@ export default function WalletComponent() {
       setIsRefreshing(false)
     })
   }
-  }
-
   const toggleExchangeRate = () => {
     setShowExchangeRate(!showExchangeRate)
   }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 transition-colors duration-300 dark:bg-gray-900">
@@ -358,7 +368,8 @@ export default function WalletComponent() {
               />
               <button
                 onClick={submitWithdraw}
-                className="w-full rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors duration-300 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                disabled={  balance == null||parseFloat(withdrawAmount) > balance || balance === 0}
+                className="w-full rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors duration-300 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm Withdraw
               </button>
