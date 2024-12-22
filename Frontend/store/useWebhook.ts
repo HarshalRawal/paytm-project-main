@@ -1,8 +1,8 @@
 import {  useEffect } from "react";
 import { useBalance } from "./useBalance";
 import { usePaginationStore } from "./usePaginationState";
+import { Transaction } from "./usePaginationState";
 const useWebSocket = (userId: string) => {
-  const { setTransactions } = usePaginationStore.getState();
   useEffect(() => {
     // Ensure userId is passed as part of the WebSocket URL or in a message
     const socket = new WebSocket(`ws://localhost:8080?userId=${encodeURIComponent(userId)}`);
@@ -17,15 +17,35 @@ const useWebSocket = (userId: string) => {
         console.log('Received WebSocket message:', message);
         switch (message.event){
           case 'wallet-notification':
-            if(message.data?.currentBalance!==undefined){
-              const {setBalance} = useBalance.getState();
+            const { setBalance } = useBalance.getState();
+            const { setTransactions, setLoading, setCursor, setHasNextPage } = usePaginationStore.getState();
+          
+            // Start by setting loading to true while processing the message
+            setLoading(true);
+          
+            if (message.data?.currentBalance !== undefined) {
               console.log('Wallet notification:', message.data);
               setBalance(message.data.currentBalance);
             }
-            if(message.data?.transactions){
-              console.log('New transaction:', message.data.newTransaction);
-              setTransactions((transactions) => [message.data.newTransaction, ...transactions]);
-            }   
+          
+            if (message.data?.transactions) {
+              console.log('New transactions:', message.data.transactions as Transaction[]);
+              // Replace transactions with the new data
+              setTransactions(message.data.transactions);
+            }
+          
+            if (message.data?.nextCursor) {
+              console.log('Next cursor:', message.data.nextCursor);
+              setCursor(message.data.nextCursor);
+            } else {
+              setCursor(null); // Clear the cursor if not provided
+            }
+          
+            // Update hasNextPage based on the presence of nextCursor
+            setHasNextPage(!!message.data.nextCursor);
+          
+            // Once all updates are done, set loading to false
+            setLoading(false);
             break;
               case 'Bank-Token':
                 if (message.data?.redirectUrl) {

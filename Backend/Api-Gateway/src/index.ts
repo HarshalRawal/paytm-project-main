@@ -75,12 +75,13 @@ app.post('/api-gateway/wallet-notification', async (req, res) => {
     const { message, userId, currentBalance, newTransaction } = req.body;
     console.log('Received wallet notification:', req.body);
     console.log(`Updating transaction in cache for userId: ${userId}`);
-    const cacheKey = `transactions:${newTransaction.walletId}:first:10`;
-   const transactions =  await updateTransactionInCache(cacheKey, newTransaction);
+    const cacheKey = `transactions:${newTransaction.walletId}:*:10`;
+   const { transactions = [], nextCursor = null } = await updateTransactionInCache(cacheKey, newTransaction) || {};
+   console.log("transactions to send to frontend:",transactions);
     const clientSocket = activeClients.get(userId);
     const notification = {
         event: "wallet-notification",
-        data: { message, currentBalance, transactions }
+        data: { message, currentBalance, transactions,nextCursor },
     };
 
     if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {

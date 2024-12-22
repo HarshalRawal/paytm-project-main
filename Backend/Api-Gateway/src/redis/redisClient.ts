@@ -136,63 +136,55 @@ export async function storeTransactionInCache(cacheKey: string, data: any, ttl: 
 //   }
 // }
 
-export async function updateTransactionInCache(userId:string, newTransaction:any) {
+export async function updateTransactionInCache(cacheKey:string, newTransaction:any) {
   try {
     const client = await initRedisClient();
 
     // Get all related keys for the user
-    const relatedKeys = await client.keys(`transactions:${userId}:*`);
-    relatedKeys.sort(); // Sort keys to process in order, e.g., page:1 -> page:2
+    const relatedKeys = await client.keys(cacheKey);
+    console.log("relatedKeys", relatedKeys);
 
-    let carryOverTransaction = newTransaction; // Start with the new transaction
-
-    for (const cacheKey of relatedKeys) {
-      // Fetch existing transactions for the current key
-      const cachedData = await client.get(cacheKey);
-      let transactions = [];
-      let parsedData = [];
-      let nextCursor = null;
-      if (cachedData) {
-        try {
-          parsedData = JSON.parse(cachedData);
-          if (parsedData.transactions) {
-            transactions = parsedData.transactions;
-          }
-          if (!Array.isArray(transactions)) {
-            console.warn(`Cached data for key "${cacheKey}" is not an array. Resetting to empty array.`);
-            transactions = [];
-          }
-        } catch (parseError) {
-          console.error(`Error parsing cached data for key "${cacheKey}":`, parseError);
-          transactions = [];
-        }
-      }
-
-      // Add the carry-over transaction to the start of this array
-      if (carryOverTransaction) {
-        transactions.unshift(carryOverTransaction);
-      }
-
-      // Keep only the first 10 transactions, and move the overflow to carry-over
-      if (transactions.length > 10) {
-        carryOverTransaction = transactions.pop(); // Move the last transaction to carry-over
-      } else {
-        carryOverTransaction = null; // No more carry-over needed
-      }
-
-      nextCursor = transactions[9].createdAt || null;
-      console.log("nextCursor",nextCursor);
-      await client.setEx(cacheKey, 3600, JSON.stringify({ transactions, nextCursor }));
-      console.log(`Cache updated for key: "${cacheKey}"`);
+    if (relatedKeys.length === 0) {
+      console.warn("No related keys found. Consider initializing cache.");
+      await client.setEx(cacheKey, 3600, JSON.stringify({ transactions: [newTransaction], nextCursor: null }));
+      return;
     }
 
-    // If there's still a carry-over transaction, log it
+    relatedKeys.sort(); // Ensure keys are sorted
+    let carryOverTransaction = newTransaction;
+      let cachedData;
+      let transactions = [];
+      let nextCursor = null;
+    for (const cacheKey of relatedKeys) {
+      cachedData = await client.get(cacheKey);
+      try {
+        const parsedData = JSON.parse(cachedData || "{}");
+        transactions =  parsedData.transactions || [];
+        console.log("transactions",transactions);
+      } catch (parseError) {
+        console.error(`Error parsing cached data for key "${cacheKey}":`, parseError);
+      }
+
+      if (carryOverTransaction) transactions.unshift(carryOverTransaction);
+
+      if (transactions.length > 10) {
+        carryOverTransaction = transactions.pop();
+      } else {
+        carryOverTransaction = null;
+      }
+      nextCursor = transactions.length >= 10 ? transactions[9].createdAt : null;
+      console.log("nextCursor",nextCursor);
+      await client.setEx(cacheKey, 3600, JSON.stringify({ transactions:transactions, nextCursor:nextCursor }));
+    }
+
     if (carryOverTransaction) {
       console.warn(`Carry-over transaction could not be stored:`, carryOverTransaction);
     }
+    return { transactions , nextCursor}
   } catch (error) {
-    console.error(`Error updating cache for userId "${userId}":`, error);
+    console.error(`Error updating cache for with cache key "${cacheKey}":`, error);
   }
 }
+
 
 

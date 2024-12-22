@@ -40,6 +40,6 @@ export async function WithDrawRequest({userId , amount , walletId} : TopUpReques
         })
         console.log("WithDrawal requeset sent succesfully : ", respone);
     } catch (error) {
-        console.error("Error communicating with the Payement Server");
+        console.error("Error communicating with the Payement Server",error);
     }
 }
