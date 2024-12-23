@@ -17,6 +17,36 @@ interface BankResponse {
     // Add other properties as needed
 }
 
+export interface UserResponse{
+    userId : string;
+    walletId : string;
+    phone : string;
+    upi : string;
+}
+
+export async function getUserInfo(upi: string): Promise<UserResponse | null> {
+    console.log("Getting the user details");
+
+    try {
+        const response = await axios.post<UserResponse>("http://localhost:6001/get-user", {
+            upi: upi,
+        });
+
+        const user = response.data;
+
+        if (!user || !user.userId || !user.walletId) {
+            console.log("Missing some data (userId, walletId)");
+            return null;
+        }
+
+        console.log("Received user details:", user);
+        return user;
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+        return null;
+    }
+}
+
 export async function processPayment(idempotencyKey:string, userId:string, amount:number , type : PaymentType) {
     console.log("Processing payment for user:", userId, "Amount:", amount);
 
