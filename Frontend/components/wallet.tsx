@@ -131,7 +131,7 @@ export default function WalletComponent() {
   const submitTopUp = async() => {
     const amount = parseFloat(topUpAmount)
     if (!isNaN(amount) && amount > 0) {
-      TopUpRequest({ amount , upi : "9703181979@easypay"});
+      TopUpRequest({userId, walletId, amount});
       closeTopUpModal()
     }
   }
@@ -161,7 +161,7 @@ export default function WalletComponent() {
       
       const userId = '3291280e-5400-490d-8865-49f6591c249c';
       const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
-      WithDrawRequest({ amount , upi : "9703181979@easypay"});
+      WithDrawRequest({userId, walletId, amount});
       closeWithdrawModal()
     }
   }

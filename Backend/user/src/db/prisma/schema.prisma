@@ -12,13 +12,11 @@ model User {
   name         String
   email        String         @unique
   password     String
-  phone        String         @unique
+  phone        String?
   walletId     String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
-
-
 
 
 // enum TransactionStatus {

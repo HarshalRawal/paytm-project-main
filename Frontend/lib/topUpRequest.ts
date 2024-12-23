@@ -1,52 +1,44 @@
 import axios from "axios";
 import { v4 as uuidv4 } from 'uuid';
-// export interface TopUpRequest {
-//   userId: string;
-//   amount: number;
-// //   upi : string;
-//   walletId: string;
-// }
-
-export interface TopUpRequest{
-    // userId : string;
-    amount : number ;
-    upi : string;
+export interface TopUpRequest {
+  userId: string;
+  amount: number;
+  walletId: string;
 }
 
-export async function TopUpRequest({amount , upi}:TopUpRequest){
+export async function TopUpRequest({userId,amount,walletId}:TopUpRequest){
     try {
         const idempotencyKey = uuidv4();
-        const response = await axios.post('http://localhost:8080/api-gateway/top-up/',{
+        const respone = await axios.post('http://localhost:8080/api-gateway/top-up/',{
+            userId,
             amount,
-            upi
+            walletId
         },{
             headers:{
                 'Content-Type': 'application/json',
                 "idempotency-key": idempotencyKey,
             }
         })
-        console.log("Top up request sent successfully:");
-        console.dir(response, { depth: null, colors: true });
+        console.log("Top up request sent successfully:",respone);
     } catch (error) {
         console.error("Error communicating with the paymentServer:", error);
     }
 }
 
-export async function WithDrawRequest({amount , upi} : TopUpRequest){
+export async function WithDrawRequest({userId , amount , walletId} : TopUpRequest){
     try {
         const idempotencyKey = uuidv4();
-        const response = await axios.post('http://localhost:8080/api-gateway/with-draw' , {
-            
+        const respone = await axios.post('http://localhost:8080/api-gateway/with-draw' , {
+            userId , 
             amount ,
-            upi
+            walletId
         }, {
             headers : {
                 'Content-Type' : 'application/json',
                 "idempotency-key" : idempotencyKey
             }
         })
-        console.log("Withdraw request sent successfully:");
-        console.dir(response, { depth: null, colors: true });
+        console.log("WithDrawal requeset sent succesfully : ", respone);
     } catch (error) {
         console.error("Error communicating with the Payement Server",error);
     }
