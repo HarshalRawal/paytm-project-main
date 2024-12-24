@@ -228,7 +228,7 @@ export default function WalletComponent() {
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                      ${balance ? balance : "N/A"}
+                      ${balance!= null && balance != undefined ? balance : "N/A"}
                     </p>
                     {showExchangeRate && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
