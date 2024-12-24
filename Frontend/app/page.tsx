@@ -10,11 +10,14 @@ import Testimonials from '@/components/home/Testimonials'
 import AppShowcase from '@/components/home/AppShowCase'
 import CTA from '@/components/home/CTA'
 import Footer from '@/components/home/Footer'
+import { useRouter } from 'next/navigation'
+import router from 'next/router'
 
 export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
+  const router = useRouter()  // Use useRouter hook
   const { scrollYProgress } = useScroll()
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
@@ -37,6 +40,7 @@ export default function Home() {
   }
 
   const handleLogin = () => {
+    router.push('/signin')  
     setIsLoggedIn(true)
   }
 
