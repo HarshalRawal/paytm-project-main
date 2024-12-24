@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback} from 'react'
-import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft, ArrowDownRight } from 'lucide-react'
+import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft, ArrowDownRight, WalletCards } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
 import axios from 'axios'
@@ -9,7 +9,11 @@ import useWebSocket from '@/store/useWebhook'
 import { TopUpRequest, WithDrawRequest } from '@/lib/topUpRequest'
 import { RecentTransactions } from '@/components/RecentTransactions'
 import { Transaction, usePaginationStore } from '@/store/usePaginationState'
+import { fetchSessionData } from '@/lib/fetchSessionData'
+import { useRouter } from 'next/navigation'
 export default function WalletComponent() {
+
+  const router = useRouter()  // Use useRouter hook
   const { balance, loading: balanceLoading, error: balanceError, fetchBalance } = useBalance();
   const {
     transactions,
@@ -38,20 +42,32 @@ export default function WalletComponent() {
     console.log('Redirect:', redirect);
     setIsRedirect(redirect);
   }, []);
-  const userId = "3291280e-5400-490d-8865-49f6591c249c";
-  const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
-  useWebSocket(userId);
+  
+    // const userId = '3291280e-5400-490d-8865-49f6591c249c';
+    // const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
 
-  useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true'
-    setIsDarkMode(isDark)
-  }, [])
+    let userId : string  = "";
+    let walletId : string  = "";
+    
+    const initializeSessionData = async () => {
+      const sessionData = await fetchSessionData();
+      if (sessionData) {
+        userId = sessionData.userId;
+        walletId = sessionData.walletId;
+        console.log('Session initialized:', { userId, walletId });
+      } else {
+        console.log('Session initialization failed.');
+      }
+    };
+
+    initializeSessionData()
+
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode)
     localStorage.setItem('darkMode', isDarkMode.toString())
   }, [isDarkMode])
-
+  
   const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
     setLoading(true);
     try {
@@ -89,6 +105,7 @@ export default function WalletComponent() {
     if (!isRedirect) {
       console.log(isRedirect);
       console.log('fetching initial balance and transactions');
+      
       
       const fetchUserBalance = async () => {
         await fetchBalance(userId);
@@ -128,11 +145,32 @@ export default function WalletComponent() {
     setTopUpAmount('')
   }
 
-  const submitTopUp = async() => {
+  const submitTopUp = async () => {
     const amount = parseFloat(topUpAmount)
+  
+    // Check if the cookie is present
+    const cookies = document.cookie
+    const sessionIdExists = cookies.includes('sessionId') // Replace 'sessionId' with your cookie name
+  
+    if (!sessionIdExists) {
+      console.error('Session cookie not found. Please log in.')
+      alert('You need to log in before making a top-up request.')
+      // Optional: Redirect to login page
+      window.location.href = '/signin'
+      return
+    }
+  
     if (!isNaN(amount) && amount > 0) {
-      TopUpRequest({userId, walletId, amount});
-      closeTopUpModal()
+      try {
+        await TopUpRequest({ userId, walletId, amount }) // Assuming this is an API call
+        closeTopUpModal()
+        console.log('Top-up request successful.')
+      } catch (error) {
+        console.error('Error during top-up request:', error)
+        alert('Failed to process the top-up request. Please try again.')
+      }
+    } else {
+      alert('Please enter a valid amount.')
     }
   }
 
@@ -147,6 +185,17 @@ export default function WalletComponent() {
 
   const submitWithdraw = async() => {
     const amount = parseFloat(withdrawAmount)
+    // Check if the cookie is present
+    const cookies = document.cookie
+    const sessionIdExists = cookies.includes('sessionId') // Replace 'sessionId' with your cookie name
+  
+    if (!sessionIdExists) {
+      console.error('Session cookie not found. Please log in.')
+      alert('You need to log in before making a top-up request.')
+      // Optional: Redirect to login page
+      window.location.href = '/signin'
+      return
+    }
     if (!isNaN(amount) && amount > 0) {
       if (balance === 0) {
         alert("You cannot withdraw money when your balance is zero.")
@@ -158,9 +207,7 @@ export default function WalletComponent() {
           return
         }
       }
-      
-      const userId = '3291280e-5400-490d-8865-49f6591c249c';
-      const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160'
+      // if(userId == "" || walletId == ""){router.push('/signin')}
       WithDrawRequest({userId, walletId, amount});
       closeWithdrawModal()
     }

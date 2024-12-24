@@ -1,21 +1,33 @@
 import express from 'express';
 import { createServer } from 'http';
 import WebSocket from 'ws';
-import { idempotencyMiddleware } from './middleware/idempotencyMiddleware';
-import { topUpProxy, withDrawProxy } from './routes/route';
 import cors from 'cors';
-import { getBalance } from './utils/getBalance';
-import * as url from 'url';
 import axios from 'axios';
+import * as url from 'url';
+import Redis from 'ioredis';
+import cookieParser from 'cookie-parser';
+
+import { topUpProxy, withDrawProxy } from './routes/route';
+import { getBalance } from './utils/getBalance';
+import { idempotencyMiddleware } from './middleware/idempotencyMiddleware';
 import { handleTransactionRequest } from './routes/transactionsProxy';
 import { updateTransactionInCache} from './redis/redisClient';
 import { checkBalanceInRedis,storeBalanceInRedis,updateBalanceInRedis } from './redis/redisBalance';
+
+
+interface CustomRequest extends Request {
+    cookies: { [key: string]: string }; // Specify the cookie structure
+}
+
+const redis = new Redis();
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 app.use(cors({
     origin: '*', // Allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
+    credentials: true, 
 }));
 
 app.use("/api-gateway/top-up", idempotencyMiddleware, topUpProxy);
@@ -182,6 +194,30 @@ app.post('/wallet-service',async (req,res)=>{
         console.log(`Sent amount to wallet service for walletId: ${walletId}`);
     }
     res.send({message: 'message  sent to frontend successfully'});
+})
+
+
+app.post("/api-gateway/get-session-data" , async(req : CustomRequest , res : any) =>{
+    const sessionId = req.cookies.sessionId; // Assumes cookies-parser is set up
+    console.log("Reached to get the cookie data with session Id ; " , sessionId)
+  
+  if (!sessionId) {
+    return res.status(401).json({ error: 'No sessionId provided' });
+  }
+
+  try {
+    const sessionData = await redis.get(`session:${sessionId}`);
+    if (!sessionData) {
+      return res.status(403).json({ error: 'Session data not found' });
+    }
+
+    const { userId, walletId } = JSON.parse(sessionData);
+    console.log("userId :" , userId , " WallerId : " , walletId)
+    res.status(200).json({ userId, walletId });
+  } catch (error) {
+    console.error('Error retrieving session data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 })
 
 

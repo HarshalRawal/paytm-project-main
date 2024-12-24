@@ -69,10 +69,11 @@ app.post('/new-user', async (req: Request, res: any) => {
     );
 
     // Set sessionId in an httpOnly cookie
-    res.cookie('sessionId', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+    res.cookie('sessionId', sessionId , {
+      httpOnly: true, // Prevent access from JavaScript
+      secure: process.env.NODE_ENV === 'production', // Ensure it's only sent over HTTPS in production
+      sameSite: 'None', // Required for cross-origin requests
+      maxAge: 3600000 // 1 hour expiration time
     });
 
     res.status(201).json({ updatedUser, message: 'User signup successfully' });
@@ -117,10 +118,11 @@ app.post('/signin', async (req: Request, res: any) => {
     );
 
     // Set sessionId in an httpOnly cookie
-    res.cookie('sessionId', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+    res.cookie('sessionId', sessionId , {
+      httpOnly: true, // Prevent access from JavaScript
+      secure: process.env.NODE_ENV === 'production', // Ensure it's only sent over HTTPS in production
+      sameSite: 'None', // Required for cross-origin requests
+      maxAge: 3600000 // 1 hour expiration time
     });
 
     res.status(200).json({ user, message: 'User signed in successfully' });
@@ -144,10 +146,11 @@ app.post('/logout', async (req: Request, res: any) => {
     await redis.del(`session:${sessionId}`);
 
     // Clear the session cookie
-    res.clearCookie('sessionId', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+    res.clearCookie('sessionId' , {
+      httpOnly: true, // Prevent access from JavaScript
+      secure: process.env.NODE_ENV === 'production', // Ensure it's only sent over HTTPS in production
+      sameSite: 'None', // Required for cross-origin requests
+      maxAge: 3600000 // 1 hour expiration time
     });
 
     res.status(200).json({ message: 'User logged out successfully' });
