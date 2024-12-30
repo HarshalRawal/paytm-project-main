@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/decimal.js": "^0.0.32",
     "@types/express": "^5.0.0",
     "prisma": "^5.20.0"
   },
