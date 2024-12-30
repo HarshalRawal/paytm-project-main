@@ -30,6 +30,7 @@ docker volume create bank-data
 docker volume create bank-web-hook-server-data
 docker volume create payment-data
 docker volume create wallet-data
+docker volume create chat-data
 
 <!-- docker commands to create a container  -->
 
@@ -38,6 +39,15 @@ docker volume create wallet-data
 ## Step 2: Create Docker Containers
 Create the necessary Container for the different backend services
 ```bash
+# chat Postgres container running on port 2374
+docker run -d \
+  --name chat-db \
+  -p 2374:2374 \
+  -v chat-data:/var/lib/postgresql/data \
+  -e POSTGRES_USER=chat_user \
+  -e POSTGRES_PASSWORD=chat_password \
+  -e POSTGRES_DB=chat_db \
+  postgres
 
 # user Postgres container running on port 6000
 docker run -d \
