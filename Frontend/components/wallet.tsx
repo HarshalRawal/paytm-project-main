@@ -8,7 +8,7 @@ import axios from 'axios'
 import useWebSocket from '@/store/useWebhook'
 import { TopUpRequest, WithDrawRequest } from '@/lib/topUpRequest'
 import { RecentTransactions } from '@/components/RecentTransactions'
-import { Transaction, usePaginationStore } from '@/store/usePaginationState'
+import { Transaction, usePaginationStore } from '@/store/usePaginationState'  
 export default function WalletComponent() {
   const { balance, loading: balanceLoading, error: balanceError, fetchBalance } = useBalance();
   const {
@@ -228,7 +228,7 @@ export default function WalletComponent() {
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                      ${balance!= null && balance != undefined ? balance : "N/A"}
+                    ${balance !== null && balance !== undefined ? balance : "N/A"}
                     </p>
                     {showExchangeRate && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
