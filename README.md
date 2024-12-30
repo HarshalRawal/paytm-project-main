@@ -42,7 +42,7 @@ Create the necessary Container for the different backend services
 # chat Postgres container running on port 2049
 docker run -d \
   --name chat-db \
-  -p 2049:2049 \
+  -p 2049:5432 \
   -v chat-data:/var/lib/postgresql/data \
   -e POSTGRES_USER=chat_user \
   -e POSTGRES_PASSWORD=chat_password \
