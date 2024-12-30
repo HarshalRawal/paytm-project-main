@@ -39,10 +39,10 @@ docker volume create chat-data
 ## Step 2: Create Docker Containers
 Create the necessary Container for the different backend services
 ```bash
-# chat Postgres container running on port 2374
+# chat Postgres container running on port 2049
 docker run -d \
   --name chat-db \
-  -p 2374:2374 \
+  -p 2049:2049 \
   -v chat-data:/var/lib/postgresql/data \
   -e POSTGRES_USER=chat_user \
   -e POSTGRES_PASSWORD=chat_password \
@@ -148,6 +148,8 @@ DATABASE_URL=postgresql://payment_user:payment_password@localhost:3002/payment_d
 # wallet .env
 DATABASE_URL=postgresql://wallet_user:wallet_password@localhost:8085/wallet_db
 ```
+# chat .env
+DATABASE_URL=postgresql://chat_user:chat_password@localhost:2049/chat_db
 ### How to Use This `README.md`
 1. Copy the above content.
 2. Create a new file named `README.md` in your project directory.
