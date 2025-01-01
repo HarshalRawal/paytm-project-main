@@ -19,6 +19,10 @@ export function ChatSection({ personName, onClose }: ChatSectionProps) {
     setMessage('')
   }
 
+  const handleInputClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+
   return (
     <motion.div 
       className="space-y-4 bg-zinc-900 rounded-xl p-4 border border-zinc-800"
@@ -46,6 +50,8 @@ export function ChatSection({ personName, onClose }: ChatSectionProps) {
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onClick={handleInputClick}
+          onMouseDown={(e) => e.stopPropagation()}
           className="flex-grow bg-zinc-800/50 border-zinc-700 text-zinc-100 
                      placeholder-zinc-500 focus:border-zinc-600 focus:ring-2 
                      focus:ring-zinc-600/50 rounded-lg"

@@ -6,6 +6,7 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "phone" TEXT,
     "walletId" TEXT,
+    "upi" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

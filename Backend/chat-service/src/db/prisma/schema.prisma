@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+//postgresql://wallet_user:wallet_password@localhost:8085/wallet_db
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://chat_user:chat_password@localhost:2049/chat_db"
+}
+model Chat {
+  id          String    @id @default(uuid())  // Unique identifier for the chat
+  user1Id     String                                // ID of the first user in the chat
+  user2Id     String                                // ID of the second user in the chat
+  lastMessage String?                               // Content of the last message in the chat (optional)
+  updatedAt   DateTime @updatedAt                   // Timestamp of the last update in the chat
+  createdAt   DateTime @default(now())             // Timestamp when the chat was created
+
+  messages    Message[] @relation("ChatMessages")   // Relation to messages
+
+  @@unique([user1Id, user2Id])                      // Ensure one chat per user pair
+}
+
+model Message {
+  id         String   @id @default(uuid())          // Unique identifier for the message
+  chatId     String                                   // Reference to the chat
+  senderId   String                                   // ID of the user sending the message
+  receiverId String                                   // ID of the user receiving the message
+  content    String                                   // Message content
+  status     MessageStatus @default(SENT)            // Message status (sent, delivered, read)
+  timestamp  DateTime @default(now())                // Timestamp of when the message was sent
+
+  chat       Chat     @relation("ChatMessages", fields: [chatId], references: [id]) // Foreign key relation
+}
+
+enum MessageStatus {
+  SENT       // Message has been sent
+  DELIVERED  // Message has been delivered to the recipient
+  READ       // Message has been read by the recipient
+}
