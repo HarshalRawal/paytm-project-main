@@ -17,7 +17,6 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
-
 app.use("/api-gateway/top-up", idempotencyMiddleware, topUpProxy);
 app.use("/api-gateway/with-draw", idempotencyMiddleware, withDrawProxy);
 
@@ -184,7 +183,63 @@ app.post('/wallet-service',async (req,res)=>{
     res.send({message: 'message  sent to frontend successfully'});
 })
 
+app.post('/api-gateway/search/user', async (req, res) => {
+    const { searchParameter } = req.body;
+    console.log(`Checking if ${searchParameter} exists`);
+    try {
+        const response = await axios.post('http://localhost:6001/is-user/', {
+            searchParameter: searchParameter
+        });
+        console.log(`Response from user service: ${response.data}`);
+        res.status(200).json({data:response.data});
+        return;
+    } catch (error) {
+        console.error(`Error checking if ${searchParameter} exists: ${error}`);
+        res.status(500).send({ error: 'Internal server error' });
+        return;
+    }
+});
 
+app.post('/api-gateway/addContact', async (req, res) => {
+    const { contactUsername, userId } = req.body;
+  
+    try {
+      // Forward the request to the user service
+      const response = await axios.post('http://localhost:6001/addContact', {
+        contactUsername,
+        userId,
+      });
+  
+      console.log(`Contact added: ${JSON.stringify(response.data)}`);
+  
+      // Return the response from the user service in JSON format
+      res.status(200).json({
+        message: 'Contact added successfully via API Gateway',
+        data: response.data,
+      });
+    } catch (error) {
+      console.error(`Error adding contact: ${error}`);
+      // Include additional details in the error response if available
+      res.status(500).json({
+        error: 'Internal server error',
+      });
+    }
+  });
+
+app.get(`/api-gateway/getContact`, async (req, res) => {
+    const userId = req.query.userId as string;
+    console.log(`Getting contacts for userId: ${userId}`);
+    try {
+        const response = await axios.get(`http://localhost:6001/getContact`, {
+            params: { userId: userId }
+        });
+        console.log(`getContact response: ${response.data}`);
+        res.status(200).json(response.data);
+    } catch (error) {
+        console.error('Failed to fetch contacts:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+})
 // Start the server
 server.listen(8080, () => {
     console.log('API Gateway is running on port 8080');
