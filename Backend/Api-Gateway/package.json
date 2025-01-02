@@ -15,6 +15,7 @@
   "dependencies": {
     "@types/http-proxy": "^1.17.15",
     "axios": "^1.7.9",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "http-proxy-middleware": "^3.0.2",
@@ -24,6 +25,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/http-proxy-middleware": "^1.0.0",

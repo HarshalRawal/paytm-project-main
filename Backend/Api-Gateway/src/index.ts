@@ -4,12 +4,13 @@ import WebSocket from 'ws';
 import { idempotencyMiddleware } from './middleware/idempotencyMiddleware';
 import { topUpProxy, withDrawProxy } from './routes/route';
 import cors from 'cors';
-import { getBalance } from './utils/getBalance';
+import { getBalanceHanler,checkBalanceHandler } from './utils/getBalance';
 import * as url from 'url';
 import axios from 'axios';
 import { handleTransactionRequest } from './routes/transactionsProxy';
 import { updateTransactionInCache} from './redis/redisClient';
-import { checkBalanceInRedis,storeBalanceInRedis,updateBalanceInRedis } from './redis/redisBalance';
+import {updateBalanceInRedis } from './redis/redisBalance'
+import { p2pTransactionHandler } from './utils/getTransaction';
 const app = express();
 app.use(express.json());
 app.use(cors({
@@ -137,39 +138,11 @@ app.post('/api-gateway/bank-token', (req, res) => {
     }
     res.status(200).json({ message: 'Token received and sent to client' });
 });
-app.post('/api-gateway/getBalance', async (req, res) => {
-    try {
-      const { userId } = req.body;
-  
-      if (!userId) {
-        res.status(400).json({ error: 'userId is required' });
-        return;
-      }
-  
-      // Check balance in cache
-      const cachedBalance = await checkBalanceInRedis(userId);
-      if (cachedBalance !== null) {
-        console.log(`Cache hit for userId: ${userId}`);
-        res.status(200).json({ balance: cachedBalance });
-        return;
-      }
-  
-      // Fetch balance from source
-      console.log(`Cache miss. Fetching balance for userId: ${userId}`);
-      const balance = await getBalance(userId);
-  
-      // Store fetched balance in cache and respond
-      await storeBalanceInRedis(userId, balance);
-       res.status(200).json({ balance });
-       return;
-  
-    } catch (error) {
-      console.error('Error getting balance:', error);
-       res.status(500).json({ error: 'Internal server error' });
-       return;
-    }
-  });
-  
+
+app.post('/api-gateway/getBalance', getBalanceHanler);
+
+app.post('/api-gateway/checkBalance',checkBalanceHandler);
+
 app.post('/wallet-service',async (req,res)=>{
     const amount = req.body.amount;
     const walletId = req.body.walletId;
@@ -241,6 +214,8 @@ app.get(`/api-gateway/getContact`, async (req, res) => {
     }
 })
 // Start the server
+app.post('/api-gateway/p2pTransaction', p2pTransactionHandler);
+
 server.listen(8080, () => {
     console.log('API Gateway is running on port 8080');
 });
