@@ -25,6 +25,7 @@ export async function storeBalanceInRedis(userId: string, balance: number): Prom
   try {
     const client = await initRedisClient();
     const cacheKey = generateCacheKey(userId);
+    //console.log(`Storing balance:${balance.toString()} in cache for userId: ${userId}`);
     await client.setEx(cacheKey, BALANCE_CACHE_TTL, balance.toString());
   } catch (error) {
     console.error(`Error storing balance in Redis for userId: ${userId}`, error);

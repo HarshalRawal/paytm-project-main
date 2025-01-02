@@ -10,15 +10,18 @@ import { getChatForContact } from '@/data/chats'
 import { format } from 'date-fns'
 import { Message } from '@/data/chats'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PaymentModal } from './payment-model'
 
 interface ChatSectionProps {
   selectedContact?: Person;
 }
 
 export function ChatSection({ selectedContact }: ChatSectionProps) {
+  const senderId = "3291280e-5400-490d-8865-49f6591c249c"
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [showContactInfo, setShowContactInfo] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
@@ -147,6 +150,7 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
             variant="outline"
             size="sm"
             className="btn-secondary bg-green-500 hover:bg-green-600 text-white"
+            onClick={() => setShowPaymentModal(true)}
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Pay
@@ -221,6 +225,16 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
           </Button>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          onClose={() => setShowPaymentModal(false)}
+          receiverId={selectedContact.id}
+          receiverName={selectedContact.name}
+          senderId={senderId}
+        />
+      )}
     </div>
   )
 }

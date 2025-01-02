@@ -14,10 +14,12 @@ datasource db {
     name           String
     username       String?      @unique
     passwordHash   String
+    hashedPin      String?
     profilePicture String?
     walletId       String?      @unique
     createdAt      DateTime     @default(now())
     updatedAt      DateTime     @updatedAt
+
     // Relations
     contactsOwned  Contact[]    @relation("UserContacts")
     contacts       Contact[]    @relation("Contacts")

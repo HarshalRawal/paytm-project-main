@@ -70,6 +70,10 @@ app.get("/transactions", async (req, res) => {
     }
 });
 
+app.post("/p2pTransaction", async (req, res) =>{
+    console.log('Received request for p2p transaction');
+})
+
 const PORT = process.env.PORT || 8086;
 
 app.listen(PORT, () => {

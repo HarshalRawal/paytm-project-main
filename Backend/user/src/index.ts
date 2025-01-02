@@ -7,15 +7,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { connectDb, disconnectDb } from './db/index';
 import { PrismaClient } from '@prisma/client';
 import cookieParse from 'cookie-parser';
-
+import { prisma } from './db/index';
 import { GenerateToken } from './utils/generateToken';
 import { logout } from './utils/logout';
 import { cookieMiddleware } from './utils/middleware';
 import { isExistingUser } from './utils/isExistingUser';
 import { addContact } from './utils/addContact';
 import { getContacts } from './utils/getContacts';
-
-const prisma = new PrismaClient();
 const app = express();
 // const redis = new Redis(); // Defaults to localhost:6379
 
@@ -243,6 +241,25 @@ app.get('/getContact', async (req, res) => {
     return;
   }
 });
+
+app.get("/getHashedPin", async (req, res) => {
+  const { userId } = req.query;
+  console.log(`Fetching hashed PIN from API for walletId: ${userId}`);
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId as string },
+      select: { hashedPin: true },
+    })
+    if(!user){
+       res.status(404).json({ error: `User ${userId} not found` });
+       return;
+    }
+    res.status(200).json({hashedPin:user.hashedPin} );
+  } catch (error) {
+    console.error('Error getting hashed pin:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+})
 
 
 
