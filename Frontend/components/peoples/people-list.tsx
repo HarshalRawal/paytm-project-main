@@ -1,20 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useContactsStore, Person } from '@/store/useContact'
-import { ChatSection } from './chat-section'
 import { SearchBar } from './search-bar'
 import { AnimatedAvatar } from './animated-avatar'
 import { AddContactForm } from './add-contact-form'
 import { Button } from '@/components/ui/button'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, MoreVertical } from 'lucide-react'
+import { getChatForContact } from '@/data/chats'
+import { format } from 'date-fns'
 
-export function PeopleList() {
+export function PeopleList({ onSelectContact }: { onSelectContact: (person: Person) => void }) {
   const { contacts, fetchContacts } = useContactsStore()
   const [filteredContacts, setFilteredContacts] = useState<Person[]>([])
-  const [openChats, setOpenChats] = useState<{ [key: string]: boolean }>({})
   const [isAddContactOpen, setIsAddContactOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchContacts()
@@ -32,84 +32,94 @@ export function PeopleList() {
     setFilteredContacts(filtered)
   }
 
-  const toggleChat = (personId: string) => {
-    setOpenChats(prev => ({
-      ...prev,
-      [personId]: !prev[personId]
-    }))
+  const handleSelectContact = (person: Person) => {
+    setSelectedId(person.id)
+    onSelectContact(person)
+  }
+
+  const getLastMessage = (personId: string) => {
+    const chat = getChatForContact(personId)
+    if (!chat?.messages.length) return null
+    return chat.messages[chat.messages.length - 1]
   }
 
   return (
-    <div className="bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-800">
-      <div className="p-6 space-y-4">
-        <div className="flex justify-between items-center">
-          <SearchBar onSearch={handleSearch} />
+    <div className="w-[350px] flex flex-col h-screen border-r border-border bg-white dark:bg-gray-900 shadow-lg text-gray-900 dark:text-white">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">People</h1>
+        <div className="flex items-center gap-2">
           <Button
             onClick={() => setIsAddContactOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg ml-4"
+            variant="ghost"
+            size="icon"
+            className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
           >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add People
+            <UserPlus className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors group relative"
+          >
+            <MoreVertical className="h-5 w-5" />
+            <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-gray-200 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+              Menu
+            </span>
           </Button>
         </div>
-        <motion.div className="space-y-3">
-          {filteredContacts.map((person) => (
-            <motion.div
+      </div>
+
+      {/* Search */}
+      <SearchBar onSearch={handleSearch} />
+
+      {/* Contact List */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredContacts.map((person) => {
+          const lastMessage = getLastMessage(person.id)
+          return (
+            <div
               key={person.id}
-              className="relative group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className={`relative cursor-pointer transition-all duration-200 ease-in-out ${
+                selectedId === person.id 
+                  ? 'bg-gray-100 dark:bg-gray-800' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => handleSelectContact(person)}
             >
-              <div 
-                className="rounded-xl p-4 bg-zinc-800/50 hover:bg-zinc-800 
-                          transition-all duration-300 cursor-pointer
-                          border border-zinc-700 hover:border-zinc-600"
-                onClick={() => toggleChat(person.id)}
-              >
-                <div className="flex items-center">
-                  <AnimatedAvatar
-                    src={person.avatar}
-                    alt={person.name}
-                    fallback={person.name.charAt(0)}
-                  />
-                  <div className="ml-3">
-                    <h2 className="text-lg font-medium text-zinc-100 group-hover:text-white">
+              <div className="relative z-10 flex items-center px-4 py-3">
+                <AnimatedAvatar
+                  src={person.avatar}
+                  alt={person.name}
+                  fallback={person.name.charAt(0)}
+                />
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline">
+                    <h2 className="text-[15px] font-medium truncate text-gray-900 dark:text-gray-200">
                       {person.name}
                     </h2>
-                    {person.username && (
-                      <p className="text-sm text-zinc-400">username- {person.username}</p>
-                    )}
-                    {person.phone && (
-                      <p className="text-sm text-zinc-400">phone- {person.phone}</p>
+                    {lastMessage && (
+                      <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
+                        {format(new Date(lastMessage.timestamp), 'HH:mm')}
+                      </span>
                     )}
                   </div>
+                  <p className="text-sm truncate text-gray-500 dark:text-gray-400">
+                    {lastMessage ? lastMessage.content : 'No messages yet'}
+                  </p>
                 </div>
-                <AnimatePresence>
-                  {openChats[person.id] && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-4"
-                    >
-                      <ChatSection personName={person.name} onClose={() => toggleChat(person.id)} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
-            </motion.div>
-          ))}
-        </motion.div>
+            </div>
+          )
+        })}
       </div>
-      <AnimatePresence>
-        {isAddContactOpen && (
-          <AddContactForm
-            onClose={() => setIsAddContactOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+
+      {/* Add Contact Modal */}
+      {isAddContactOpen && (
+        <AddContactForm onClose={() => setIsAddContactOpen(false)} />
+      )}
     </div>
   )
 }
 
+  

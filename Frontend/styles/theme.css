@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-light: #6366f1;
+  --color-secondary: #10b981;
+  --color-accent: #f59e0b;
+  --color-background: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-text-light: #6b7280;
+  --color-border: #e5e7eb;
+  --color-hover: #f9fafb;
+  --color-selected: #e5e7eb;
+}
+
+.dark {
+  --color-primary: #6366f1;
+  --color-primary-light: #818cf8;
+  --color-secondary: #34d399;
+  --color-accent: #fbbf24;
+  --color-background: #111827;
+  --color-surface: #1f2937;
+  --color-text: #f9fafb;
+  --color-text-light: #9ca3af;
+  --color-border: #374151;
+  --color-hover: #374151;
+  --color-selected: #4b5563;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-light transition-colors duration-200;
+  }
+  .btn-secondary {
+    @apply bg-secondary text-white hover:bg-opacity-90 transition-colors duration-200;
+  }
+  .btn-accent {
+    @apply bg-accent text-white hover:bg-opacity-90 transition-colors duration-200;
+  }
+}

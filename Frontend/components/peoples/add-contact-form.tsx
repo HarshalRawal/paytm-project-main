@@ -59,11 +59,14 @@ export function AddContactForm({ onClose }: AddContactFormProps) {
           userId:`3291280e-5400-490d-8865-49f6591c249c`
          })
         //const responseData = JSON.stringify(response.data)
-        const { message,data } = response.data
-        console.log(message,data);
-       if(data==`User ${searchResult.username} is  already there in your contact list`){
-        setAddContactMessage(data)
-       }
+        const { message,data} = response.data
+        console.log(`message: ${message}`);
+        console.log(`data: ${JSON.stringify(data)}`)
+        console.log(`Error: ${data?.error}`)
+        if(data?.error){
+            console.log(`User ${searchResult.username} is  already there in your contact list!!!!`)
+         setAddContactMessage(data["error"])
+        }
        else{
         setAddContactMessage(`Contact added successfully`)
         addContactToStore({
