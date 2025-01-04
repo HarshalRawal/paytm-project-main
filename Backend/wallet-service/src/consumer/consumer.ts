@@ -3,9 +3,8 @@ import { prisma } from "../db/prisma";
 import axios from "axios";
 import { TransactionStatus } from "@prisma/client";
 import { TransactionType } from "@prisma/client";
-import { updateWalletBalance } from "../utils/updateWalletBalance";
-import { createNewTransaction } from "../utils/newTransaction";
-import { sendNotification } from "../utils/sendNotification";
+import { handleTopUpTransaction } from "../topicHandlers/top-up-transaction";
+import { p2pTransactionHandler } from "../topicHandlers/p2p-transactions";
 const kafka = new Kafka({
     clientId: "wallet-service",
     brokers: ["localhost:9092"],
@@ -21,12 +20,12 @@ export interface Payload {
 }
 const consumer = kafka.consumer({ groupId: "wallet-group" });
 
-export async function connectKafka() {
+export async function connectKafka(topics:string[]) {
     try {
         await consumer.connect();
         console.log("Connected to Kafka broker");
-        await consumer.subscribe({ topic: "top-up-transactions" });
-        console.log("subscribed to top-up-transactions");
+        await consumer.subscribe({ topics });
+        console.log(`subscribed to topics: ${topics} `);
     } catch (error) {
         console.error("Error connecting to Kafka", error);
         process.exit(1);
@@ -43,30 +42,22 @@ export async function disconnectKafka() {
     }
 }
 
-export async function consumeFromKafka(topic: string) {
+export async function consumeFromKafka() {
       try {
         await consumer.run({
-            eachMessage: async ({ message }) => {
+            eachMessage: async ({ topic, message }) => {
                 if(!message.value){
                     return;
                 }
-                const rawPayload = message.value.toString();
-                const payload: Payload = JSON.parse(rawPayload);
-                console.log("Received message", payload);
-                // Update wallet balance
-               const updatedWallet =  await updateWalletBalance(payload);
-               
-                if(updatedWallet == null){
-                    console.log("Upadted wallet is null ");
-                    return ;
+                switch (topic) {
+                    case "top-up-transactions":
+                        await handleTopUpTransaction(message.value);
+                        break;
+                    case "p2p-transactions":
+                        await p2pTransactionHandler(message.value);    
+                    default:
+                        break;
                 }
-               // Create new Transaction
-                const newTransaction = await createNewTransaction(payload,updatedWallet.id);
-
-                // Send notification    
-                await sendNotification(payload.userId,`Successfully ${payload.transactionType}ed ${payload.amount} to your wallet`,updatedWallet.balance,newTransaction);
-               
-                console.log("Transaction processed successfully");
             }
         })
       } catch (error) {

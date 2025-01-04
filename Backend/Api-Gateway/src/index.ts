@@ -11,6 +11,7 @@ import { handleTransactionRequest } from './routes/transactionsProxy';
 import { updateTransactionInCache} from './redis/redisClient';
 import {updateBalanceInRedis } from './redis/redisBalance'
 import { p2pTransactionHandler } from './utils/getTransaction';
+import { connectProducer,disconnectProducer } from './producer/producer';
 const app = express();
 app.use(express.json());
 app.use(cors({
@@ -83,7 +84,6 @@ app.post('/api-gateway/wallet-notification', async (req, res) => {
         event: "wallet-notification",
         data: { message, currentBalance, transactions,nextCursor },
     };
-
     if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.send(JSON.stringify(notification));
     } else {
@@ -216,9 +216,7 @@ app.get(`/api-gateway/getContact`, async (req, res) => {
 // Start the server
 app.post('/api-gateway/p2pTransaction', p2pTransactionHandler);
 
-server.listen(8080, () => {
-    console.log('API Gateway is running on port 8080');
-});
+
 
 // Graceful shutdown
 process.on('SIGINT', () => {
@@ -231,4 +229,30 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
+async function start() {
+    try {
+      await connectProducer(); 
+      server.listen(8080, () => {
+        console.log('API Gateway is running on port 8080');
+    });
+    } catch (error) {
+      console.error('error starting the server',error);
+      process.exit(1);
+    }// Initial call if there are any events already present
+ }
+ 
+ process.on('SIGINT', async () => {
+     console.log("Shutting down gracefully...");
+     await disconnectProducer()
+     wss.clients.forEach(client => {
+        client.close();
+    });
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+ });
+ 
+ start();
 

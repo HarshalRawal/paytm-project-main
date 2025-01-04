@@ -6,8 +6,9 @@ import { prisma } from "./db/prisma";
 import { PrismaClient } from "@prisma/client";
 import { walletBalance } from "./utils/walletBalance";
 import { getTransactions } from "./utils/AllTransactions";
+import { p2pTransactionHandler } from "./controllers/p2pTransactionHandler";
 const app = express();
-
+const topics = ["top-up-transactions","p2p-transactions"];
 // Add CORS middleware
 app.use(cors({
     origin: 'http://localhost:3000', // Change this to your frontend origin
@@ -70,9 +71,7 @@ app.get("/transactions", async (req, res) => {
     }
 });
 
-app.post("/p2pTransaction", async (req, res) =>{
-    console.log('Received request for p2p transaction');
-})
+// app.post("/p2pTransaction",p2pTransactionHandler);
 
 const PORT = process.env.PORT || 8086;
 
@@ -82,9 +81,9 @@ app.listen(PORT, () => {
 
 async function start() {
     try {
-        await connectKafka();
+        await connectKafka(topics);
         await connectDb();
-        consumeFromKafka("top-up-transactions");
+        consumeFromKafka();
     } catch (error) {
         console.error("Error starting the service:", error);
         process.exit(1); // Exit if unable to start

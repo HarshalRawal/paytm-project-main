@@ -76,6 +76,7 @@ export const produceToKafka = async (topic: string, outboxId: string) => {
                                 status,
                                 amount,
                             }),
+                            key:userId
                         },
                     ],
                 });

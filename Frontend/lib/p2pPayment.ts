@@ -16,7 +16,7 @@ export async function P2pPaymentRequest({senderId,receiverId,amount,message,pin}
             pin,
             receiverId,
             amount,
-            message
+            message,
         },{
             headers:{
                 'Content-Type': 'application/json',
