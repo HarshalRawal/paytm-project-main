@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Request,Response } from 'express';
 import bcrypt from 'bcrypt';
+import { produce } from '../producer/producer';
 import { getHashedPinInRedis,storeHashedPinInRedis } from '../redis/redisClient';
 export const fetchTransactionsFromWalletServer = async (walletId: string, cursor: string | null, limit: number) => {
   try {
@@ -87,19 +88,9 @@ export async function p2pTransactionHandler(req: Request, res: Response) {
     // Send the P2P transaction request to the wallet service asynchronously
     console.log('Sending P2P transaction request to wallet service');
     try {
-      const response = await axios.post('http://localhost:8086/p2pTransaction', {
-        senderId,
-        receiverId,
-        amount,
-      });
-
-      console.log(`Transaction response: ${JSON.stringify(response.data)}`);
-
-      // You can perform additional handling for the response from the wallet service here (e.g., logging, storing transaction records, etc.)
-      // Optionally, you can also notify the frontend of the transaction status if needed in another way.
+        await produce({senderId,receiverId,amount})
     } catch (error) {
-      console.error(`Error sending P2P transaction to wallet service: ${error}`);
-      // Optionally, handle the error gracefully if the wallet service fails (e.g., updating the frontend or retrying the request).
+      console.log("error producing to kafka");
     }
   } catch (error) {
     console.error(`Error processing transaction: ${error}`);
