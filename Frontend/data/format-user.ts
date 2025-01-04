@@ -19,7 +19,7 @@ const users = [
       "passwordHash": "12345678",
       "hashedPin": null,
       "profilePicture": null,
-      "walletId": null
+      "walletId": "0a5a7e5c-9e58-4cbc-83ba-43e786281a5b"
     },
     {
       "id": "64275ca0-3e19-4bfe-a50c-9a530767c9a0",
@@ -30,7 +30,7 @@ const users = [
       "passwordHash": "hello",
       "hashedPin": null,
       "profilePicture": null,
-      "walletId": "64275ca0-3e19-4bfe-a50c-9a530767c9a0"
+      "walletId": "61322557-52a1-472a-8a10-553fb9756222"
     }
   ]
   
