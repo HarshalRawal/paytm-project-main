@@ -22,15 +22,33 @@ export default function SigninPage() {
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode)
   }
-  const signin = async ()=>{
-    const user = await axios.post("http://localhost:6001/signin" , {
-      email :email,
-      password : password
-    })
-
-    
-    
-  }
+  const signin = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:6001/signin",
+        {
+          email: email,
+          password: password,
+        }
+      );
+  
+      // Assuming the token is returned in the response
+      const token = response.data.token;
+  
+      if (token) {
+        // Store the token in localStorage
+        localStorage.setItem('authToken', token);
+        console.log('Token stored in localStorage:', localStorage.getItem('authToken'));
+  
+        // Optionally redirect or update the UI
+        console.log(response.data.message);
+      } else {
+        console.error('No token received.');
+      }
+    } catch (error) {
+      console.error('Error during sign-in:', error.response?.data || error.message);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 transition-colors duration-300 dark:bg-gray-900">

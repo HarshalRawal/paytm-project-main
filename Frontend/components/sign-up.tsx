@@ -31,14 +31,35 @@ export default function SignupPage() {
     console.log('Form submitted:', { username, email, password })
   }
 
-  const signupButton =async ()=>{
-    const newuser = await axios.post("http://localhost:6001/new-user" , {
-      name : username,
-      password : password,
-      email : email
-    })
-    console.log(newuser)
-  }
+  const signupButton = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:6001/new-user",
+        {
+          name: username,
+          password: password,
+          email: email,
+          // phone: "21212121"
+        }
+      );
+  
+      // Extract token from the response
+      const token = response.data.token;
+  
+      if (token) {
+        // Store the token in localStorage
+        localStorage.setItem("authToken", token);
+        console.log("Token stored in localStorage:", localStorage.getItem('authToken'));
+  
+        // Optional: Redirect or update UI
+        alert("Signup successful! Token stored.");
+      } else {
+        console.error("Token not found in response.");
+      }
+    } catch (error) {
+      console.error("Error during signup:", error.response?.data || error.message);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 transition-colors duration-300 dark:bg-gray-900">
