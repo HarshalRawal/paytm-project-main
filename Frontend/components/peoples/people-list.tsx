@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { UserPlus, MoreVertical } from 'lucide-react'
 import { getChatForContact } from '@/data/chats'
 import { format } from 'date-fns'
+import WalletButton from '../wallet-button'
 
 export function PeopleList({ onSelectContact }: { onSelectContact: (person: Person) => void }) {
   const { contacts, fetchContacts } = useContactsStore()
@@ -70,8 +71,15 @@ export function PeopleList({ onSelectContact }: { onSelectContact: (person: Pers
         </div>
       </div>
 
-      {/* Search */}
-      <SearchBar onSearch={handleSearch} />
+      {/* Search and Wallet Button */}
+      <div className="flex items-center px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex-grow flex items-center">
+          <div className="flex-grow mr-2 ">
+            <SearchBar onSearch={handleSearch} />
+          </div>
+          <WalletButton />
+        </div>
+      </div>
 
       {/* Contact List */}
       <div className="flex-1 overflow-y-auto">
@@ -122,4 +130,3 @@ export function PeopleList({ onSelectContact }: { onSelectContact: (person: Pers
   )
 }
 
-  
