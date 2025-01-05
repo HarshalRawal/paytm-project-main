@@ -16,12 +16,19 @@ interface ChatSectionProps {
   selectedContact?: Person;
 }
 
+interface Transaction {
+  amount: number;
+  receiverName: string;
+  timestamp: string;
+}
+
 export function ChatSection({ selectedContact }: ChatSectionProps) {
   const senderId = "3291280e-5400-490d-8865-49f6591c249c"
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [showContactInfo, setShowContactInfo] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
@@ -34,7 +41,7 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, transactions])
 
   const handleSend = () => {
     if (!message.trim() || !selectedContact) return
@@ -42,7 +49,7 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
     const newMessage: Message = {
       id: `m${Date.now()}`,
       content: message,
-      senderId: 'user123',
+      senderId: senderId,
       timestamp: new Date().toISOString(),
       status: 'sent'
     }
@@ -56,6 +63,18 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
       e.preventDefault()
       handleSend()
     }
+  }
+
+  const handlePaymentComplete = (amount: number) => {
+    if (!selectedContact) return
+
+    const newTransaction: Transaction = {
+      amount,
+      receiverName: selectedContact.name,
+      timestamp: new Date().toISOString(),
+    }
+
+    setTransactions(prev => [...prev, newTransaction])
   }
 
   if (!selectedContact) {
@@ -202,6 +221,24 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
             </div>
           </div>
         ))}
+        {transactions.map((transaction, index) => (
+          <div key={index} className={`flex ${transaction.receiverName === selectedContact.name ? 'justify-end' : 'justify-start'} mb-4`}>
+            <div className="bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg px-4 py-2 max-w-[70%] cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 transition-colors">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                {transaction.receiverName === selectedContact.name 
+                  ? `Paid $${transaction.amount.toFixed(2)} to ${transaction.receiverName}`
+                  : `Received $${transaction.amount.toFixed(2)} from ${transaction.receiverName}`
+                }
+              </p>
+              <div className="flex items-center justify-end gap-1 mt-1">
+                <span className="text-[10px] text-green-700 dark:text-green-300 opacity-70">
+                  {format(new Date(transaction.timestamp), 'HH:mm')}
+                </span>
+                <Check className="h-3 w-3 text-green-700 dark:text-green-300 opacity-70" />
+              </div>
+            </div>
+          </div>
+        ))}
         <div ref={messagesEndRef} />
       </div>
 
@@ -233,6 +270,7 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
           receiverId={selectedContact.id}
           receiverName={selectedContact.name}
           senderId={senderId}
+          onPaymentComplete={handlePaymentComplete}
         />
       )}
     </div>

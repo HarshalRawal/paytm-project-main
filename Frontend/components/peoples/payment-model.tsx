@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input'
 import { X, Loader2 } from 'lucide-react'
 import { checkWalletBalance } from '@/lib/p2pPayment'
 import { P2pPaymentRequest } from '@/lib/p2pPayment'
+
 interface PaymentModalProps {
   onClose: () => void
   senderId: string
   receiverId: string
   receiverName: string
+  onPaymentComplete: (amount: number) => void
 }
 
 interface ResponseData {
@@ -20,7 +22,7 @@ interface ResponseData {
   error?: string
 }
 
-export function PaymentModal({ onClose, receiverId, receiverName, senderId }: PaymentModalProps) {
+export function PaymentModal({ onClose, receiverId, receiverName, senderId, onPaymentComplete }: PaymentModalProps) {
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
   const [pin, setPin] = useState('')
@@ -34,16 +36,12 @@ export function PaymentModal({ onClose, receiverId, receiverName, senderId }: Pa
 
     try {
       const responseData: ResponseData = await checkWalletBalance(senderId, Number(amount))
-      const { success, message} = responseData
+      const { success, message } = responseData
 
-      if (success==true) {
+      if (success === true) {
         setStep('pin')
-      } 
-      else if(success==false){
-        console.log('Insufficient balance') 
-        setErrorMessage(message || 'Insufficient balance')
-      }
-      else {
+      } else {
+        console.log('Insufficient balance')
         setErrorMessage(message || 'Insufficient balance')
       }
     } catch (error) {
@@ -55,13 +53,24 @@ export function PaymentModal({ onClose, receiverId, receiverName, senderId }: Pa
   }
 
   const handlePinSubmit = async () => {
+    setIsLoading(true)
     try {
-        const response  = await P2pPaymentRequest({senderId,receiverId,amount:Number(amount),message,pin:Number(pin)});
-        console.log("P2p payment request sent successfully: >>> ",response);
+      const response = await P2pPaymentRequest({
+        senderId,
+        receiverId,
+        amount: Number(amount),
+        message,
+        pin: Number(pin)
+      })
+      console.log("P2p payment request sent successfully: >>> ", response)
+      onPaymentComplete(Number(amount))
+      onClose()
     } catch (error) {
-        console.error("Error communicating with the WalletServer:", error);
+      console.error("Error communicating with the WalletServer:", error)
+      setErrorMessage('Failed to process payment. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
-    onClose()
   }
 
   return (
@@ -160,9 +169,16 @@ export function PaymentModal({ onClose, receiverId, receiverName, senderId }: Pa
               <Button
                 onClick={handlePinSubmit}
                 className="w-full bg-green-500 hover:bg-green-600 text-white"
-                disabled={pin.length !== 4}
+                disabled={pin.length !== 4 || isLoading}
               >
-                Confirm Payment
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing payment...
+                  </>
+                ) : (
+                  'Confirm Payment'
+                )}
               </Button>
             </>
           )}
