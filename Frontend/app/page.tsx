@@ -11,6 +11,7 @@ import AppShowcase from '@/components/home/AppShowCase'
 import CTA from '@/components/home/CTA'
 import Footer from '@/components/home/Footer'
 import { useRouter } from 'next/navigation'
+import WalletButton from '@/components/wallet-button'
 import router from 'next/router'
 
 export default function Home() {
@@ -82,6 +83,7 @@ export default function Home() {
         />
         <main>
           <Hero />
+          {/* <WalletButton /> */}
           <Features />
           <HowItWorks />
           <Testimonials />
