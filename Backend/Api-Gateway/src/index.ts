@@ -215,6 +215,7 @@ app.get(`/api-gateway/getContact`, async (req, res) => {
 })
 // Start the server
 app.post('/api-gateway/p2pTransaction', p2pTransactionHandler);
+app.get('/api-gateway/getChats')
 
 
 
