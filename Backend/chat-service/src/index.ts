@@ -1,6 +1,7 @@
-import  express  from "express";
+import express from "express"
 import cors from "cors";
 import { connectDB, disconnectDB } from "./db";
+import { fetchChatIdHandler } from "./controllers/fetchChatIdHandler";
 const app = express();
 const PORT = 2211;
 app.use(cors());
@@ -16,7 +17,8 @@ async function startServer(){
         process.exit(1);
     }
 }
-
+//http://localhost:2211/fetchChatId
+app.get("/fetchChatId",fetchChatIdHandler);
 process.on("SIGINT",async ()=>{
     await disconnectDB();
     process.exit(0);

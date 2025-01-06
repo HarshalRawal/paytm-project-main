@@ -57,10 +57,13 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
     // Send message using WebSocket connection
     // Assuming you have the socketService or equivalent in the `useWebSocket` hook
       sendMessage({
-        senderId,
-        receiverId: selectedContact.id,
-        content: message,
-        timestamp: new Date().toISOString(),
+         event:"chat-messages",
+         data:{
+          senderId,
+          receiverId: selectedContact.id,
+          content: message,
+          timestamp: new Date().toISOString(),
+         }
       })
       // Add message to local state after sending
       const newMessage: Message = {
