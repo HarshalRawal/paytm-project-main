@@ -99,7 +99,7 @@ app.post('/new-user', async (req: Request, res: any) => {
     );
 
     // Create JWT token
-    const token = jwt.sign({ sessionId}, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
 
     res.status(201).json({ token, message: 'User signed up successfully' });
   } catch (error) {
