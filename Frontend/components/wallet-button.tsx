@@ -34,13 +34,7 @@ export default function WalletButton() {
 
   const userId = "3291280e-5400-490d-8865-49f6591c249c";
   const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
-  useWebSocket(userId, {
-    onError: (error) => {
-      console.error('WebSocket error:', error);
-      // Implement reconnection logic here if needed
-    }
-  });
-
+  //useWebSocket(userId);
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true'
     setIsDarkMode(isDark)

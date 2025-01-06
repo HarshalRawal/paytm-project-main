@@ -11,8 +11,8 @@ import AppShowcase from '@/components/home/AppShowCase'
 import CTA from '@/components/home/CTA'
 import Footer from '@/components/home/Footer'
 import { useRouter } from 'next/navigation'
-import WalletButton from '@/components/wallet-button'
-import router from 'next/router'
+//import WalletButton from '@/components/wallet-button'
+//import router from 'next/router'
 
 export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(true)

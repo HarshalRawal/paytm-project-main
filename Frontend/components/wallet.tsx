@@ -5,10 +5,10 @@ import { Wallet, CreditCard, DollarSign, RefreshCw, Sun, Moon, X, ArrowRightLeft
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBalance } from '@/store/useBalance'
 import axios from 'axios'
-import useWebSocket from '@/store/useWebhook'
 import { TopUpRequest, WithDrawRequest } from '@/lib/topUpRequest'
 import { RecentTransactions } from '@/components/RecentTransactions'
 import { Transaction, usePaginationStore } from '@/store/usePaginationState'  
+import { useWebSocketStore } from '@/store/webSocketStore'
 export default function WalletComponent() {
   const { balance, loading: balanceLoading, error: balanceError, fetchBalance } = useBalance();
   const {
@@ -30,7 +30,12 @@ export default function WalletComponent() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [isRedirect, setIsRedirect] = useState<boolean | null>(null);
-
+  const userId = "3291280e-5400-490d-8865-49f6591c249c";
+  const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
+  const {connect} = useWebSocketStore()
+   useEffect(()=>{
+    connect(userId);
+   },[connect])
   useEffect(() => {
     // Extract the `redirect` query parameter from the URL
     const searchParams = new URLSearchParams(window.location.search);
@@ -38,9 +43,6 @@ export default function WalletComponent() {
     console.log('Redirect:', redirect);
     setIsRedirect(redirect);
   }, []);
-  const userId = "3291280e-5400-490d-8865-49f6591c249c";
-  const walletId = '80f7b7c0-d495-430f-990d-49e3c5ddc160';
-  useWebSocket(userId);
 
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true'
