@@ -35,7 +35,7 @@ const activeClients: Map<string, WebSocket> = new Map();
 
 // Handle WebSocket connections
 wss.on('connection', (ws,req) => {
-    const reqUrl = req.url || '' ;
+    const reqUrl = req.url || '';
     const queryParams = url.parse(reqUrl,true).query
     const userId = queryParams.userId as string;
     
@@ -47,6 +47,11 @@ wss.on('connection', (ws,req) => {
     console.log(`web-socket connection established for userId ${userId}`);
     activeClients.set(userId, ws);
     onWebSocketConnection(ws,userId);
+
+    ws.on("message",(message:any)=>{
+       const data = JSON.parse(message);
+       console.log(data);
+    })
     // Handle client disconnection
     ws.on('close', () => {
         console.log(`WebSocket connection closed for userId ${userId}`);
@@ -215,7 +220,6 @@ app.get(`/api-gateway/getContact`, async (req, res) => {
 })
 // Start the server
 app.post('/api-gateway/p2pTransaction', p2pTransactionHandler);
-app.get('/api-gateway/getChats')
 
 
 

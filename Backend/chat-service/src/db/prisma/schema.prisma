@@ -22,7 +22,7 @@ model Chat {
 
 model Message {
   id             String       @id @default(uuid())          // Unique identifier for the message
-  chatId         String                                       // Reference to the chat
+  chatId         String                                    // Reference to the chat
   senderId       String                                       // ID of the user sending the message
   receiverId     String                                       // ID of the user receiving the message
   content        String?                                      // Message content

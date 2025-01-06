@@ -85,6 +85,7 @@ export const useChatStore = create<ChatStore>((set) => ({
     set((state) => ({
       messages: { ...state.messages, [chatId]: messages },
     })),
+
   addMessage: (chatId: string, message: Message) =>
     set((state) => ({
       messages: {

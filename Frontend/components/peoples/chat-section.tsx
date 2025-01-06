@@ -11,6 +11,8 @@ import { format } from 'date-fns'
 import { Message } from '@/data/chats'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PaymentModal } from './payment-model'
+import { useWebSocketStore } from '@/store/webSocketStore'
+
 
 interface ChatSectionProps {
   selectedContact?: Person;
@@ -32,30 +34,46 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
+ // const {sendMessage} = useWebSocket(senderId);
+ const {connect,sendMessage,isConnected} = useWebSocketStore();
   useEffect(() => {
     if (selectedContact) {
       const chat = getChatForContact(selectedContact.id)
       setMessages(chat?.messages || [])
+      connect(senderId);
     }
-  }, [selectedContact])
+  }, [selectedContact,connect])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, transactions])
 
   const handleSend = () => {
-    if (!message.trim() || !selectedContact) return
-    
-    const newMessage: Message = {
-      id: `m${Date.now()}`,
-      content: message,
-      senderId: senderId,
-      timestamp: new Date().toISOString(),
-      status: 'sent'
-    }
-
-    setMessages(prev => [...prev, newMessage])
-    setMessage('')
+    if (!message.trim() || !selectedContact)
+       return
+      if(!isConnected){
+        connect(senderId);
+      }
+    // Send message using WebSocket connection
+    // Assuming you have the socketService or equivalent in the `useWebSocket` hook
+      sendMessage({
+        senderId,
+        receiverId: selectedContact.id,
+        content: message,
+        timestamp: new Date().toISOString(),
+      })
+      // Add message to local state after sending
+      const newMessage: Message = {
+        id: `m${Date.now()}`,
+        content: message,
+        senderId: senderId,
+        timestamp: new Date().toISOString(),
+        status: 'sent'
+      }
+  
+      setMessages(prev => [...prev, newMessage])
+      setMessage('')
+      //console.error('WebSocket is not connected')
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -76,7 +94,6 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
 
     setTransactions(prev => [...prev, newTransaction])
   }
-
   if (!selectedContact) {
     return (
       <div className="flex-1 flex items-center justify-center bg-background dark:bg-gray-800">
@@ -84,7 +101,6 @@ export function ChatSection({ selectedContact }: ChatSectionProps) {
       </div>
     )
   }
-
   return (
     <div className="flex-1 flex flex-col h-screen bg-background dark:bg-gray-800">
       {/* Chat Header */}
