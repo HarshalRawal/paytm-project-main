@@ -3,6 +3,7 @@ import cors from 'cors'; // Import the CORS package
 import axios from 'axios';
 import Redis from 'ioredis';
 import bcrypt from 'bcrypt';
+import  jwt  from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { connectDb, disconnectDb } from './db/index';
 import { PrismaClient } from '@prisma/client';
@@ -14,13 +15,18 @@ import { cookieMiddleware } from './utils/middleware';
 import { isExistingUser } from './utils/isExistingUser';
 import { addContact } from './utils/addContact';
 import { getContacts } from './utils/getContacts';
-const app = express();
-// const redis = new Redis(); // Defaults to localhost:6379
+import getSessionDataFromToken from './utils/getSessionDataFromToken';
 
+const app = express();
+const redis = new Redis(); // Defaults to localhost:6379
+const JWT_SECRET = 'your-secret-key';
 
 
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors({
+  credentials: true,
+  origin: 'http://localhost:3000',
+}));
 app.use(express.json());
 app.use(cookieParse());
 
@@ -52,137 +58,153 @@ process.on('SIGINT', async () => {
 start();
 // app.post('/logout', logout);
 
-// app.post('/new-user', async (req: Request, res: any) => {
-//   const { name, email, password, phone } = req.body;
+app.post('/new-user', async (req: Request, res: any) => {
+  console.log("Sign Up request received");
+  const { name, email, password, phone } = req.body;
 
-//   try {
-//     const hashedPassword = await bcrypt.hash(password, 12);
+  try {
+    // const hashedPassword = await bcrypt.hash(password, 12);
 
-//     const newUser = await prisma.user.create({
-//       data: { name, email, password: hashedPassword, phone },
-//     });
+    const newUser = await prisma.user.create({
+      data: { name, email, passwordHash: password, phone },
+    });
 
-//     let walletId;
-//     try {
-//       const newWalletResponse = await axios.post<string>(
-//         'http://localhost:8086/create-wallet',
-//         { userId: newUser.userId }
-//       );
-//       walletId = newWalletResponse.data;
-//     } catch (walletError) {
-//       console.error('Error creating wallet:', walletError);
-//       return res.status(500).json({ error: 'Error creating wallet' });
-//     }
+    let walletId;
+    try {
+      const newWalletResponse = await axios.post<string>(
+        'http://localhost:8086/create-wallet',
+        { userId: newUser.id }
+      );
+      walletId = newWalletResponse.data;
+    } catch (walletError) {
+      console.error('Error creating wallet:', walletError);
+      return res.status(500).json({ error: 'Error creating wallet' });
+    }
 
-//     const updatedUser = await prisma.user.update({
-//       where: { userId: newUser.userId },
-//       data: { walletId },
-//     });
+    const updatedUser = await prisma.user.update({
+      where: { id: newUser.id },
+      data: { walletId },
+    });
 
-//     // Generate sessionId
-//     const sessionId = uuidv4();
-//     console.log("Session Id generated : " , sessionId)
+    // Generate sessionId
+    const sessionId = uuidv4();
+    console.log("Session Id generated:", sessionId);
 
-//     // Store sessionId in Redis
-//     await redis.set(
-//       `session:${sessionId}`,
-//       JSON.stringify({ userId: newUser.userId, walletId }),
-//       'EX',
-//       3600 // Set expiration time in seconds (1 hour)
-//     );
+    // Store sessionId in Redis
+    await redis.set(
+      `session:${sessionId}`,
+      JSON.stringify({ userId: newUser.id, walletId }),
+      'EX',
+      3600 // 1 hour
+    );
 
-//     // Set sessionId in an httpOnly cookie
-//     res.cookie('sessionId', sessionId, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       sameSite: 'strict',
-//     });
+    // Create JWT token
+    const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
 
-//     res.status(201).json({ updatedUser, message: 'User signup successfully' });
-//   } catch (error) {
-//     console.error('Error creating user:', error);
-//     res.status(500).json({ error: 'Error creating user after creating the walletID' });
-//   }
-// });
+    res.status(201).json({ token, message: 'User signed up successfully' });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Error creating user' });
+  }
+});
 
 
 
-// app.post('/signin', async (req: Request, res: any) => {
-//   const { email, password } = req.body;
+app.post('/signin', async (req: Request, res: any) => {
+  console.log("Sign In request received");
+  const { email, password } = req.body;
 
-//   try {
-//     // Find user by email
-//     const user = await prisma.user.findUnique({
-//       where: { email },
-//     });
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
 
-//     if (!user) {
-//       return res.status(400).json({ error: 'User not found' });
-//     }
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
 
-//     // Compare entered password with the stored hashed password
-//     console.log("password : " , password , " UserPassword : " , user.password)
-//     const isPasswordValid = await bcrypt.compare(password, user.password);
-//     if (!isPasswordValid) {
-//       return res.status(401).json({ error: 'Invalid password' });
-//     }
+    // const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = password
+    if (isPasswordValid != user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
 
-//     // Generate sessionId
-//     const sessionId = uuidv4();
-//     console.log("Session Id generated: ", sessionId);
+    const sessionId = uuidv4();
+    console.log("Session Id generated:", sessionId);
 
-//     // Store sessionId in Redis
-//     await redis.set(
-//       `session:${sessionId}`,
-//       JSON.stringify({ userId: user.userId, walletId: user.walletId }),
-//       'EX',
-//       3600 // Set expiration time in seconds (1 hour)
-//     );
+    await redis.set(
+      `session:${sessionId}`,
+      JSON.stringify({ userId: user.id, walletId: user.walletId }),
+      'EX',
+      3600 // 1 hour
+    );
 
-//     // Set sessionId in an httpOnly cookie
-//     res.cookie('sessionId', sessionId, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       sameSite: 'strict',
-//     });
+    // Create JWT token
+    const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
 
-//     res.status(200).json({ user, message: 'User signed in successfully' });
-//   } catch (error) {
-//     console.error('Error signing in user:', error);
-//     res.status(500).json({ error: 'Error signing in user' });
-//   }
-// });
+    res.status(200).json({ token, message: 'User signed in successfully' });
+  } catch (error) {
+    console.error('Error signing in user:', error);
+    res.status(500).json({ error: 'Error signing in user' });
+  }
+});
+
+app.post('/logout', async (req: Request, res: any) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(400).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { sessionId: string };
+    const sessionId = decoded.sessionId;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+
+    // Remove sessionId from Redis
+    await redis.del(`session:${sessionId}`);
+    res.status(200).json({ message: 'User logged out successfully' });
+  } catch (error) {
+    console.error('Error logging out user:', error);
+    res.status(500).json({ error: 'Error logging out user' });
+  }
+});
 
 
-// app.post('/logout', async (req: Request, res: any) => {
-//   try {
-//     // Get sessionId from the cookie
-//     const sessionId = req.cookies.sessionId;
+app.get('/check', async (req: any, res: any) => {
+  const authHeader = req.headers.authorization;
 
-//     if (!sessionId) {
-//       return res.status(400).json({ error: 'No session found' });
-//     }
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authorization header missing' });
+  }
 
-//     // Remove sessionId from Redis
-//     await redis.del(`session:${sessionId}`);
+  const token = authHeader.split(' ')[1]; // Extract token (remove "Bearer ")
 
-//     // Clear the session cookie
-//     res.clearCookie('sessionId', {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       sameSite: 'strict',
-//     });
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('Decoded Token:', decoded);
 
-//     res.status(200).json({ message: 'User logged out successfully' });
-//   } catch (error) {
-//     console.error('Error logging out user:', error);
-//     res.status(500).json({ error: 'Error logging out user' });
-//   }
-// });
+    // Extract sessionId from the decoded token
+    const sessionId = (decoded as any).sessionId; // Ensure TypeScript understands the shape of `decoded`
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID missing in token' });
+    }
 
-// app.post('/check', cookieMiddleware, async (req: Request, res: Response) => {
-//   res.send('hello from the check request');
-// });
+    // Fetch session data from Redis
+    const sessionData = await getSessionDataFromToken(sessionId);
+
+    console.log('Session Data:', sessionData);
+
+    res.status(200).json({ message: 'Authorized', sessionData });
+  } catch (error) {
+    console.error('Invalid token or error in processing:', error);
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+});
 
 
 app.post('/is-user', async (req, res) => {
