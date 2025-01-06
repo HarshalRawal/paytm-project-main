@@ -120,7 +120,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => ({
         }
 
         default:
-          console.log("Unknown event:", message.event);
+          console.log("Unknown event:", message);
           break;
       }
     } catch (error) {
