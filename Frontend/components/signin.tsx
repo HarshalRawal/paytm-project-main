@@ -39,6 +39,7 @@ export default function SigninPage() {
         // Store the token in localStorage
         localStorage.setItem('authToken', token);
         console.log('Token stored in localStorage:', localStorage.getItem('authToken'));
+        alert('Successfully signin ');
   
         // Optionally redirect or update the UI
         console.log(response.data.message);

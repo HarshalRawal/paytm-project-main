@@ -21,10 +21,12 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
+
 app.use("/api-gateway/top-up"  ,idempotencyMiddleware, topUpProxy);
 app.use("/api-gateway/with-draw" ,  idempotencyMiddleware,withDrawProxy);
 
 app.get("/transactions",authenticateJWT, handleTransactionRequest);
+
 
 // Create an HTTP server to host both the REST API and WebSocket server
 const server = createServer(app)
@@ -154,6 +156,7 @@ app.post('/api-gateway/getBalance',getBalanceHanler);
 
 app.post('/api-gateway/checkBalance',checkBalanceHandler);
 
+
 app.post('/wallet-service',async (req,res)=>{
     const amount = req.body.amount;
     const walletId = req.body.walletId;
@@ -167,7 +170,9 @@ app.post('/wallet-service',async (req,res)=>{
     res.send({message: 'message  sent to frontend successfully'});
 })
 
+
 app.post('/api-gateway/search/user', async (req, res) => {
+
     const { searchParameter } = req.body;
     console.log(`Checking if ${searchParameter} exists`);
     try {
@@ -183,8 +188,10 @@ app.post('/api-gateway/search/user', async (req, res) => {
         return;
     }
 });
+
 //'http://localhost:8080/api-gateway/addContact
 app.post('/api-gateway/addContact', async (req, res) => {
+
     const { contactUsername, userId } = req.body;
    console.log(`Adding contact: ${contactUsername} for userId: ${userId}`);
     try {
@@ -211,6 +218,7 @@ app.post('/api-gateway/addContact', async (req, res) => {
   });
 
 app.get(`/api-gateway/getContact` ,async (req, res) => {
+
     const userId = req.query.userId as string;
     console.log(`Getting contacts for userId: ${userId}`);
     try {
@@ -226,7 +234,9 @@ app.get(`/api-gateway/getContact` ,async (req, res) => {
 })
 // Start the server
 
+
 app.post('/api-gateway/p2pTransaction',p2pTransactionHandler);
+
 app.get('/api-gateway/getChats')
 // Graceful shutdown
 process.on('SIGINT', () => {

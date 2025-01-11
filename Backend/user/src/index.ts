@@ -11,7 +11,7 @@ import cookieParse from 'cookie-parser';
 import { prisma } from './db/index';
 import { GenerateToken } from './utils/generateToken';
 import { logout } from './utils/logout';
-import { cookieMiddleware } from './utils/middleware';
+// import { cookieMiddleware } from './utils/middleware';
 import { isExistingUser } from './utils/isExistingUser';
 import { addContact } from './utils/addContact';
 import { getContacts } from './utils/getContacts';
@@ -100,6 +100,7 @@ app.post('/new-user', async (req: Request, res: any) => {
 
     // Create JWT token
     const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
+    console.log(token)
 
     res.status(201).json({ token, message: 'User signed up successfully' });
   } catch (error) {
@@ -139,6 +140,7 @@ app.post('/signin', async (req: Request, res: any) => {
 
     // Create JWT token
     const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
+    console.log(token)
 
     res.status(200).json({ token, message: 'User signed in successfully' });
   } catch (error) {

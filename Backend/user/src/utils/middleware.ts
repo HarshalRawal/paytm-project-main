@@ -1,23 +1,21 @@
-import { NextFunction , Request , Response} from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = "easyPay";
+export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+  const authHeader = req.headers.authorization;
 
-export const cookieMiddleware = (req: any, res: any, next: any) => {
-    console.log("cookieMiddleware called");
-    
-  const token = req.cookies.auth_token;
-  console.log(token);
-  
-  if (!token) {
-    return res.status(401).json({ message: 'Unauthorized: No token provided' });
+  if (!authHeader) {
+    res.status(401).json({ message: "Authorization header missing" });
+    return 
   }
 
+  const token = authHeader.split(" ")[1];
+
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload; 
-    req.userId != decoded.id
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "defaultSecret"); // Replace with your secret
+    // req.user = decoded; // Attach decoded token data to `req.user`
+    next(); // Proceed to the next middleware
+  } catch (err) {
+    res.status(403).json({ message: "Invalid or expired token" });
   }
 };

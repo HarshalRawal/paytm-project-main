@@ -9,6 +9,7 @@ import { TopUpRequest, WithDrawRequest } from '@/lib/topUpRequest'
 import { RecentTransactions } from '@/components/RecentTransactions'
 import { Transaction, usePaginationStore } from '@/store/usePaginationState'  
 import { useWebSocketStore } from '@/store/webSocketStore'
+import router from 'next/router'
 export default function WalletComponent() {
   const { balance, loading: balanceLoading, error: balanceError, fetchBalance } = useBalance();
   const {
@@ -60,11 +61,25 @@ export default function WalletComponent() {
   const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("authToken");
+      console.log(token);
+
+      if(!token){
+        // alert("token not found ");
+        router.push('/signin')
+        return;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`, 
+      }
+
       const response = await axios.get('http://localhost:8080/transactions', {
+     
         params: {
           walletId,
           cursor: newCursor,
-          limit: 10,
+          limit: 5,
         },
         headers,
       });
