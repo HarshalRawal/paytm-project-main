@@ -4,7 +4,7 @@ const kafka = new Kafka({
     brokers: ["localhost:9092"],
     logLevel:logLevel.WARN
 });
-const topic = "p2p-transactions"
+const topics = ["top-up-transactions","chat-service-incoming","chat-service-outgoing"];
 const producer = kafka.producer();
 export interface payload {
     senderId:string,
@@ -34,7 +34,7 @@ export async function disconnectProducer(){
 export const produce = async({senderId,receiverId,amount}:payload)=>{
     try {
         await producer.send({
-            topic,
+            topic:"p2p-transactions",
             messages:[{
                 value:JSON.stringify({
                     senderId,
@@ -42,6 +42,20 @@ export const produce = async({senderId,receiverId,amount}:payload)=>{
                     amount
                   }),
                key:senderId 
+            }]
+        })
+    } catch (error:any) {
+        console.error("Error producing to kafka",error.message);
+    }
+}
+
+export const produceToChatService = async(data:any)=>{
+    console.log("Producing to chat service",data);
+    try {
+        await producer.send({
+            topic:"chat-service-incoming",
+            messages:[{
+                value:JSON.stringify(data)
             }]
         })
     } catch (error:any) {

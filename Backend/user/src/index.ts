@@ -214,7 +214,7 @@ app.post('/is-user', async (req, res) => {
   console.log(`Checking if ${searchParameter} exists`);
   try {
     const existingUser = await isExistingUser(searchParameter);
-    console.log(`Response from user service: ${(existingUser)}`);
+    console.log(`Response from user service: ${existingUser}`);
     res.status(200).json({ existingUser });
     return;
   } catch (error) {
@@ -224,6 +224,7 @@ app.post('/is-user', async (req, res) => {
   }
 });
 app.post('/addContact', async (req, res) => {
+  console.log("Add contact request received");
   const {contactUsername,userId} = req.body;
   try {
     const response = await addContact(contactUsername,userId);
