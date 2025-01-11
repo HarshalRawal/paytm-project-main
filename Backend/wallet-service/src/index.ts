@@ -7,6 +7,7 @@ import { PrismaClient } from "@prisma/client";
 import { walletBalance } from "./utils/walletBalance";
 import { getTransactions } from "./utils/AllTransactions";
 import { p2pTransactionHandler } from "./controllers/p2pTransactionHandler";
+import authenticateJWT from "./utils/authenticateJWT";
 const app = express();
 const topics = ["top-up-transactions","p2p-transactions"];
 // Add CORS middleware
@@ -58,7 +59,7 @@ try {
     console.error('Error getting balance:', error);
 }
 })
-app.get("/transactions", async (req, res) => {
+app.get("/transactions", authenticateJWT ,async (req, res) => {
     console.log('Received request for transactions');
     console.log('Query parameters:', req.query);
     const { walletId, cursor, limit = 10 } = req.query;

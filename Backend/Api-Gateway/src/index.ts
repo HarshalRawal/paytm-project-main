@@ -20,10 +20,10 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
-app.use("/api-gateway/top-up"  ,idempotencyMiddleware, authenticateJWT , topUpProxy);
-app.use("/api-gateway/with-draw" ,  idempotencyMiddleware, authenticateJWT, withDrawProxy);
+app.use("/api-gateway/top-up"  ,idempotencyMiddleware , topUpProxy);
+app.use("/api-gateway/with-draw" ,  idempotencyMiddleware, withDrawProxy);
 
-app.get("/transactions",authenticateJWT ,  handleTransactionRequest);
+app.get("/transactions" ,  handleTransactionRequest);
 
 // Create an HTTP server to host both the REST API and WebSocket server
 const server = createServer(app)
@@ -145,9 +145,9 @@ app.post('/api-gateway/bank-token', (req, res) => {
     res.status(200).json({ message: 'Token received and sent to client' });
 });
 
-app.post('/api-gateway/getBalance', authenticateJWT , getBalanceHanler);
+app.post('/api-gateway/getBalance' , getBalanceHanler);
 
-app.post('/api-gateway/checkBalance',authenticateJWT , checkBalanceHandler);
+app.post('/api-gateway/checkBalance' , checkBalanceHandler);
 
 app.post('/wallet-service',async (req,res)=>{
     const amount = req.body.amount;
@@ -162,7 +162,7 @@ app.post('/wallet-service',async (req,res)=>{
     res.send({message: 'message  sent to frontend successfully'});
 })
 
-app.post('/api-gateway/search/user' , authenticateJWT, async (req, res) => {
+app.post('/api-gateway/search/user' , async (req, res) => {
     const { searchParameter } = req.body;
     console.log(`Checking if ${searchParameter} exists`);
     try {
@@ -179,7 +179,7 @@ app.post('/api-gateway/search/user' , authenticateJWT, async (req, res) => {
     }
 });
 
-app.post('/api-gateway/addContact' , authenticateJWT, async (req, res) => {
+app.post('/api-gateway/addContact' , async (req, res) => {
     const { contactUsername, userId } = req.body;
   
     try {
@@ -205,7 +205,7 @@ app.post('/api-gateway/addContact' , authenticateJWT, async (req, res) => {
     }
   });
 
-app.get(`/api-gateway/getContact` , authenticateJWT, async (req, res) => {
+app.get(`/api-gateway/getContact` , async (req, res) => {
     const userId = req.query.userId as string;
     console.log(`Getting contacts for userId: ${userId}`);
     try {
@@ -221,7 +221,7 @@ app.get(`/api-gateway/getContact` , authenticateJWT, async (req, res) => {
 })
 // Start the server
 
-app.post('/api-gateway/p2pTransaction',authenticateJWT ,  p2pTransactionHandler);
+app.post('/api-gateway/p2pTransaction' ,  p2pTransactionHandler);
 app.get('/api-gateway/getChats')
 // Graceful shutdown
 process.on('SIGINT', () => {
