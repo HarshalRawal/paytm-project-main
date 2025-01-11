@@ -17,6 +17,10 @@
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "kafkajs": "^2.2.4",
     "prisma": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/kafkajs": "^1.8.2"
   }
 }
