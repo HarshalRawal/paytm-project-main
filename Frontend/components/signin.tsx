@@ -46,6 +46,7 @@ export default function SigninPage() {
       } else {
         console.error('No token received.');
       }
+      
     } catch (error) {
       console.error('Error during sign-in:', error.response?.data || error.message);
     }

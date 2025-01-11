@@ -22,8 +22,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
 
-app.use("/api-gateway/top-up"  ,idempotencyMiddleware, topUpProxy);
-app.use("/api-gateway/with-draw" ,  idempotencyMiddleware,withDrawProxy);
+app.use("/api-gateway/top-up"  ,idempotencyMiddleware , authenticateJWT, topUpProxy);
+app.use("/api-gateway/with-draw" ,  idempotencyMiddleware, authenticateJWT ,withDrawProxy);
 
 app.get("/transactions",authenticateJWT, handleTransactionRequest);
 

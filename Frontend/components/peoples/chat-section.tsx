@@ -12,6 +12,7 @@ import { Message } from '@/data/chats'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PaymentModal } from './payment-model'
 import { useWebSocketStore } from '@/store/webSocketStore'
+import { getUserId } from '@/lib/getUserId'
 
 
 interface ChatSectionProps {
@@ -26,6 +27,8 @@ interface Transaction {
 
 export function ChatSection({ selectedContact }: ChatSectionProps) {
   const senderId = "3291280e-5400-490d-8865-49f6591c249c"
+
+  // const userId = getUserId()
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [showContactInfo, setShowContactInfo] = useState(false)

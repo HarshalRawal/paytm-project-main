@@ -1,13 +1,16 @@
 import axios from "axios";
+
 import { v4 as uuidv4 } from 'uuid';
 export interface TopUpRequest {
   userId: string;
   amount: number;
   walletId: string;
+  token: string;
 }
 
-export async function TopUpRequest({userId,amount,walletId}:TopUpRequest){
+export async function TopUpRequest({userId , amount , walletId , token }:TopUpRequest){
     try {
+
         const idempotencyKey = uuidv4();
         const respone = await axios.post('http://localhost:8080/api-gateway/top-up/',{
             userId,
@@ -17,6 +20,7 @@ export async function TopUpRequest({userId,amount,walletId}:TopUpRequest){
             headers:{
                 'Content-Type': 'application/json',
                 "idempotency-key": idempotencyKey,
+                Authorization: `Bearer ${token}`,
             }
         })
         console.log("Top up request sent successfully:",respone);
@@ -25,7 +29,7 @@ export async function TopUpRequest({userId,amount,walletId}:TopUpRequest){
     }
 }
 
-export async function WithDrawRequest({userId , amount , walletId} : TopUpRequest){
+export async function WithDrawRequest({userId , amount , walletId , token} : TopUpRequest){
     try {
         const idempotencyKey = uuidv4();
         const respone = await axios.post('http://localhost:8080/api-gateway/with-draw' , {
@@ -35,7 +39,8 @@ export async function WithDrawRequest({userId , amount , walletId} : TopUpReques
         }, {
             headers : {
                 'Content-Type' : 'application/json',
-                "idempotency-key" : idempotencyKey
+                "idempotency-key" : idempotencyKey,
+                Authorization: `Bearer ${token}`,
             }
         })
         console.log("WithDrawal requeset sent succesfully : ", respone);
