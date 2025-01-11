@@ -54,10 +54,6 @@ export default function WalletComponent() {
     document.documentElement.classList.toggle('dark', isDarkMode)
     localStorage.setItem('darkMode', isDarkMode.toString())
   }, [isDarkMode])
-  const token = "your-access-token";
-  const headers = {
-    Authorization: `Bearer ${token}`,
-  };
   const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
     setLoading(true);
     try {
@@ -73,7 +69,6 @@ export default function WalletComponent() {
       const headers = {
         Authorization: `Bearer ${token}`, 
       }
-
       const response = await axios.get('http://localhost:8080/transactions', {
      
         params: {

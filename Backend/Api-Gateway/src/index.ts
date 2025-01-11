@@ -21,7 +21,6 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
-
 app.use("/api-gateway/top-up"  ,idempotencyMiddleware, topUpProxy);
 app.use("/api-gateway/with-draw" ,  idempotencyMiddleware,withDrawProxy);
 

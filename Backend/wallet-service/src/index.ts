@@ -59,7 +59,7 @@ try {
     console.error('Error getting balance:', error);
 }
 })
-app.get("/transactions", authenticateJWT ,async (req, res) => {
+app.get("/transactions",async (req, res) => {
     console.log('Received request for transactions');
     console.log('Query parameters:', req.query);
     const { walletId, cursor, limit = 10 } = req.query;
