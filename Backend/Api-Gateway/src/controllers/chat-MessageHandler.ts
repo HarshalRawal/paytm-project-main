@@ -36,7 +36,7 @@ const fetchChatId = async (senderId: string, receiverId: string) => {
       console.error(`Error fetching chatId for users ${senderId} and ${receiverId}`, error);
       throw error;
     }
-  }
+ }
   
 
 export const handleMessage = async(message:Message)=>{

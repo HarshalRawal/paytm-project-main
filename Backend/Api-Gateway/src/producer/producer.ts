@@ -1,5 +1,6 @@
 import { Kafka, logLevel } from "kafkajs";
-const kafka = new Kafka({
+import { getChatKey,storeChatId, } from "../redis/redisChat";
+export const kafka = new Kafka({
     clientId: "bank-webhook-handler",
     brokers: ["localhost:9092"],
     logLevel:logLevel.WARN
@@ -51,6 +52,7 @@ export const produce = async({senderId,receiverId,amount}:payload)=>{
 
 export const produceToChatService = async(data:any)=>{
     console.log("Producing to chat service",data);
+
     try {
         await producer.send({
             topic:"chat-service-incoming",

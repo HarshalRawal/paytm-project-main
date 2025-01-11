@@ -74,7 +74,7 @@ export default function WalletComponent() {
         params: {
           walletId,
           cursor: newCursor,
-          limit: 5,
+          limit: 10,
         },
         headers,
       });
