@@ -16,7 +16,11 @@ import { connectProducer,disconnectProducer,produceToChatService } from './produ
 import authenticateJWT from './middleware/authenticateJWT';
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
+}));
 app.use("/api-gateway/top-up"  ,idempotencyMiddleware, topUpProxy);
 app.use("/api-gateway/with-draw" ,  idempotencyMiddleware,withDrawProxy);
 
