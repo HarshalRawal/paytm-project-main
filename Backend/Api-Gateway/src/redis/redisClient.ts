@@ -2,7 +2,7 @@ import { Response } from "express";
 import { createClient, RedisClientType } from "redis";
 const BALANCE_CACHE_TTL = 3600;
 export let redisClient: RedisClientType;
-
+export let redisSubscriber: RedisClientType;
 export async function initRedisClient(): Promise<RedisClientType> {
   if (!redisClient) {
     redisClient = createClient({
@@ -16,7 +16,19 @@ export async function initRedisClient(): Promise<RedisClientType> {
   }
   return redisClient;
 }
-
+export async function initRedisSubscriber(): Promise<RedisClientType> {
+  if (!redisSubscriber) {
+    redisSubscriber = createClient({
+      url: process.env.REDIS_URL,
+    });
+    redisSubscriber.on("error", (err) => {
+      console.error("Error in Redis Subscriber: ", err);
+    });
+    await redisSubscriber.connect();
+    console.log("Redis Subscriber Connected");
+  }
+  return redisSubscriber;
+}
 export async function storeIdempotencyKey(idempotencyKey: string): Promise<void> {
   const client = await initRedisClient();
   const interiumResponse = {

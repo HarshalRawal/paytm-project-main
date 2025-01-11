@@ -12,7 +12,7 @@ import { handleTransactionRequest } from './routes/transactionsProxy';
 import { updateTransactionInCache} from './redis/redisClient';
 import {updateBalanceInRedis } from './redis/redisBalance'
 import { p2pTransactionHandler } from './utils/getTransaction';
-import { connectProducer,disconnectProducer } from './producer/producer';
+import { connectProducer,disconnectProducer,produceToChatService } from './producer/producer';
 import authenticateJWT from './middleware/authenticateJWT';
 const app = express();
 app.use(express.json());
@@ -24,7 +24,7 @@ app.use(cors({
 app.use("/api-gateway/top-up"  ,idempotencyMiddleware, topUpProxy);
 app.use("/api-gateway/with-draw" ,  idempotencyMiddleware,withDrawProxy);
 
-app.get("/transactions", handleTransactionRequest);
+app.get("/transactions",authenticateJWT, handleTransactionRequest);
 
 // Create an HTTP server to host both the REST API and WebSocket server
 const server = createServer(app)
@@ -56,7 +56,7 @@ wss.on('connection', (ws,req) => {
 
     ws.on("message",async(message:any)=>{
        const data = JSON.parse(message);
-       await handleMessage(data);
+       await produceToChatService(data);
     })
     // Handle client disconnection
     ws.on('close', () => {
@@ -183,10 +183,10 @@ app.post('/api-gateway/search/user', async (req, res) => {
         return;
     }
 });
-
-app.post('/api-gateway/addContact' , authenticateJWT, async (req, res) => {
+//'http://localhost:8080/api-gateway/addContact
+app.post('/api-gateway/addContact', async (req, res) => {
     const { contactUsername, userId } = req.body;
-  
+   console.log(`Adding contact: ${contactUsername} for userId: ${userId}`);
     try {
       // Forward the request to the user service
       const response = await axios.post('http://localhost:6001/addContact', {

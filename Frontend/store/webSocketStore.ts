@@ -70,6 +70,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => ({
 
       switch (message.event) {
         case "wallet-notification": {
+          console.log("Wallet notification:", message.data);
           const { setBalance } = useBalance.getState();
           const { setTransactions, setLoading, setCursor, setHasNextPage } = usePaginationStore.getState();
 

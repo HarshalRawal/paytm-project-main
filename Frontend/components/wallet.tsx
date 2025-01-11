@@ -53,7 +53,10 @@ export default function WalletComponent() {
     document.documentElement.classList.toggle('dark', isDarkMode)
     localStorage.setItem('darkMode', isDarkMode.toString())
   }, [isDarkMode])
-
+  const token = "your-access-token";
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
   const fetchTransactions = useCallback(async (newCursor: string | null = null) => {
     setLoading(true);
     try {
@@ -63,6 +66,7 @@ export default function WalletComponent() {
           cursor: newCursor,
           limit: 10,
         },
+        headers,
       });
       const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
       const { transactions: newTransactions, nextCursor } = data;
