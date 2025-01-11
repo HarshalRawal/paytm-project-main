@@ -14,6 +14,7 @@ import {updateBalanceInRedis } from './redis/redisBalance'
 import { p2pTransactionHandler } from './utils/getTransaction';
 import { connectProducer,disconnectProducer,produceToChatService } from './producer/producer';
 import authenticateJWT from './middleware/authenticateJWT';
+import { consume } from './consumer/consumer';
 const app = express();
 app.use(express.json());
 app.use(cors({
@@ -251,7 +252,8 @@ process.on('SIGINT', () => {
 
 async function start() {
     try {
-      await connectProducer(); 
+      await connectProducer();
+      consume(); 
       server.listen(8080, () => {
         console.log('API Gateway is running on port 8080');
     });
