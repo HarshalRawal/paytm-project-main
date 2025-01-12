@@ -24,8 +24,9 @@ const JWT_SECRET = 'your-secret-key';
 
 // Enable CORS for all routes
 app.use(cors({
-  credentials: true,
-  origin: 'http://localhost:3000',
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
 app.use(express.json());
 app.use(cookieParse());
@@ -86,23 +87,14 @@ app.post('/new-user', async (req: Request, res: any) => {
       data: { walletId },
     });
 
-    // Generate sessionId
-    const sessionId = uuidv4();
-    console.log("Session Id generated:", sessionId);
-
-    // Store sessionId in Redis
-    await redis.set(
-      `session:${sessionId}`,
-      JSON.stringify({ userId: newUser.id, walletId }),
-      'EX',
-      3600 // 1 hour
-    );
-
+    console.log(" userId :  " , newUser.id);
+    console.log(" walletId : " , walletId);
     // Create JWT token
-    const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
-    console.log(token)
+    const userid = newUser.id
+    const token = jwt.sign({ userid , walletId  }, JWT_SECRET, { expiresIn: '1h' });
+    console.log("SignUp token : " , token)
 
-    res.status(201).json({ token, message: 'User signed up successfully' });
+    res.status(201).json({ token, message: 'User created successfully' });
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Error creating user' });
@@ -128,19 +120,12 @@ app.post('/signin', async (req: Request, res: any) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    const sessionId = uuidv4();
-    console.log("Session Id generated:", sessionId);
-
-    await redis.set(
-      `session:${sessionId}`,
-      JSON.stringify({ userId: user.id, walletId: user.walletId }),
-      'EX',
-      3600 // 1 hour
-    );
 
     // Create JWT token
-    const token = jwt.sign({ sessionId }, JWT_SECRET, { expiresIn: '1h' });
-    console.log(token)
+    console.log("UserId : " ,user.id);
+    console.log("WalletId : " ,user.walletId);
+    const token = jwt.sign({ userId : user.id , walletId : user.walletId }, JWT_SECRET, { expiresIn: '1h' });
+    console.log("SignIn token : " ,token)
 
     res.status(200).json({ token, message: 'User signed in successfully' });
   } catch (error) {
@@ -159,15 +144,10 @@ app.post('/logout', async (req: Request, res: any) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { sessionId: string };
-    const sessionId = decoded.sessionId;
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; walletId: string };
+    const { userId, walletId } = decoded as { userId: string; walletId: string };
 
-    if (!sessionId) {
-      return res.status(400).json({ error: 'Invalid token' });
-    }
-
-    // Remove sessionId from Redis
-    await redis.del(`session:${sessionId}`);
+   
     res.status(200).json({ message: 'User logged out successfully' });
   } catch (error) {
     console.error('Error logging out user:', error);
@@ -176,32 +156,36 @@ app.post('/logout', async (req: Request, res: any) => {
 });
 
 
-app.get('/check', async (req: any, res: any) => {
+app.get('/check', async (req: Request, res: any) => {
+
+  console.log("Reached check route")
   const authHeader = req.headers.authorization;
 
+  // Check if the Authorization header is present
   if (!authHeader) {
     return res.status(401).json({ error: 'Authorization header missing' });
   }
 
-  const token = authHeader.split(' ')[1]; // Extract token (remove "Bearer ")
+  // Extract the token from the Authorization header
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Token missing in Authorization header' });
+  }
 
   try {
-    // Verify the token
+    // Verify the JWT token
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Decoded Token:', decoded);
+    console.log('Decoded Token(from /check):', decoded);
 
-    // Extract sessionId from the decoded token
-    const sessionId = (decoded as any).sessionId; // Ensure TypeScript understands the shape of `decoded`
-    if (!sessionId) {
-      return res.status(400).json({ error: 'Session ID missing in token' });
+    // Extract userId and walletId from the decoded token
+    const { userId, walletId } = decoded as { userId: string; walletId: string };
+
+    if (!userId || !walletId) {
+      return res.status(400).json({ error: 'Invalid token payload: userId or walletId missing' });
     }
 
-    // Fetch session data from Redis
-    const sessionData = await getSessionDataFromToken(sessionId);
-
-    console.log('Session Data:', sessionData);
-
-    res.status(200).json({ message: 'Authorized', sessionData });
+    // Respond with the extracted data
+    res.status(200).json({ message: 'Authorized', userId, walletId });
   } catch (error) {
     console.error('Invalid token or error in processing:', error);
     res.status(401).json({ error: 'Unauthorized' });
