@@ -14,6 +14,7 @@ import {updateBalanceInRedis } from './redis/redisBalance'
 import { p2pTransactionHandler } from './utils/getTransaction';
 import { connectProducer,disconnectProducer,produceToChatService } from './producer/producer';
 import authenticateJWT from './middleware/authenticateJWT';
+import { consume } from './consumer/consumer';
 const app = express();
 app.use(express.json());
 app.use(cors({
@@ -22,8 +23,10 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization','Idempotency-Key'],
 }));
 
+
 app.use("/api-gateway/top-up"  ,idempotencyMiddleware , authenticateJWT, topUpProxy);
 app.use("/api-gateway/with-draw" ,  idempotencyMiddleware, authenticateJWT ,withDrawProxy);
+
 
 app.get("/transactions",authenticateJWT, handleTransactionRequest);
 
@@ -252,7 +255,8 @@ process.on('SIGINT', () => {
 
 async function start() {
     try {
-      await connectProducer(); 
+      await connectProducer();
+      consume(); 
       server.listen(8080, () => {
         console.log('API Gateway is running on port 8080');
     });
