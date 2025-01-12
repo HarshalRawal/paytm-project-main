@@ -7,7 +7,7 @@ export interface Message {
 }
 
 
-const sendMessageToReceiver = async (receiverId: string, message: object) => {
+export const sendMessageToReceiver = async (receiverId: string, message: object) => {
     const receiverConnection = getConnection(receiverId);
 
     if (receiverConnection) {

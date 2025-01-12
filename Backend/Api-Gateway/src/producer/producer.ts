@@ -1,7 +1,7 @@
 import { Kafka, logLevel } from "kafkajs";
 import { getChatKey,storeChatId, } from "../redis/redisChat";
 export const kafka = new Kafka({
-    clientId: "bank-webhook-handler",
+    clientId: "api-gateway",
     brokers: ["localhost:9092"],
     logLevel:logLevel.WARN
 });
